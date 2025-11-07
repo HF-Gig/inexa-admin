@@ -1,0 +1,322 @@
+/* Font Family Import */
+@import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap");
+
+/* Global Style */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  font-family: "Source Sans 3", sans-serif;
+}
+
+/* Modern Admin Panel Styles */
+body {
+  background: #F5F6FA;
+  color: #282828;
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  overflow: hidden;
+}
+
+.sidebar {
+  min-width: 250px;
+  background: #282828 !important;
+  color: #fff;
+  box-shadow: 2px 0 8px rgba(40, 40, 40, 0.04);
+  transition: min-width 0.3s;
+}
+
+.sidebar .pro-menu-item {
+  color: #D4D4D4;
+  font-weight: 500;
+  border-radius: 8px;
+  margin: 4px 0;
+  transition: background 0.2s, color 0.2s;
+}
+
+.sidebar .pro-menu-item.active,
+.sidebar .pro-menu-item:hover {
+  background: #3322FF !important;
+  color: #fff !important;
+}
+
+.sidebar .pro-icon {
+  color: #CCDD00 !important;
+}
+
+.main-content {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(40, 40, 40, 0.06);
+  padding: 32px 24px;
+  margin: 32px 24px;
+  min-height: calc(100vh - 120px);
+  transition: margin 0.3s, padding 0.3s;
+}
+
+@media (max-width: 900px) {
+  .main-content {
+    margin: 16px 4px;
+    padding: 16px 4px;
+    border-radius: 12px;
+  }
+}
+
+/* Table Styles */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(40, 40, 40, 0.06);
+  overflow: hidden;
+}
+
+thead {
+  background: #F5F6FA;
+}
+
+thead th {
+  color: #282828;
+  font-weight: 700;
+  padding: 16px 12px;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #D4D4D4;
+}
+
+tbody tr {
+  background: #fff;
+  transition: background 0.2s;
+}
+
+tbody tr:nth-child(even) {
+  background: #FAFAFA;
+}
+
+tbody td {
+  color: #282828;
+  padding: 14px 12px;
+  font-size: 0.98rem;
+  border-bottom: 1px solid #F0F0F0;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background: #F5F6FA;
+}
+
+/* Button Styles */
+button,
+.MuiButton-root {
+  background: #3322FF;
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 10px 22px;
+  font-size: 1rem;
+  /* box-shadow: 0 2px 8px rgba(51, 34, 255, 0.08); */
+  border: none;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+button:hover,
+.MuiButton-root:hover {
+  background: #6644FF;
+  box-shadow: 0 4px 16px rgba(102, 68, 255, 0.12);
+}
+
+/* Input Styles */
+input,
+.MuiInputBase-root {
+  background: #fff;
+  border: 1px solid #D4D4D4;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 1rem;
+}
+
+input:focus,
+.MuiInputBase-root.Mui-focused {
+  border-color: #3322FF;
+  outline: none;
+}
+
+/* Accent color for highlights */
+.accent {
+  color: #CCDD00;
+  font-weight: 700;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  background: #F5F6FA;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4D4D4;
+  border-radius: 4px;
+}
+
+/* Sidebar Responsive */
+@media (max-width: 900px) {
+  .sidebar {
+    min-width: 0;
+    width: 0;
+    position: absolute;
+    z-index: 200;
+    height: 100vh;
+    box-shadow: 2px 0 8px rgba(40, 40, 40, 0.10);
+  }
+}
+
+/* Navbar (Header) */
+.MuiBox-root[style*='position: sticky'] {
+  background: #fff !important;
+  box-shadow: 0 2px 8px rgba(40, 40, 40, 0.04) !important;
+  border-bottom: 1px solid #F0F0F0;
+}
+
+/* Logo in Header */
+.MuiBox-root img[alt='Logo'] {
+  height: 36px;
+  margin-right: 12px;
+}
+
+/* Avatar in Header */
+.MuiAvatar-root {
+  border: 2px solid #F5F6FA;
+  box-shadow: 0 1px 4px rgba(40, 40, 40, 0.06);
+}
+
+/* --- Table Card Style --- */
+.table-card {
+  border: 1px solid #e3e3e3;
+  overflow: hidden;
+  background: #fff;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 98%;
+  border-radius: 20px !important;
+}
+
+/* --- Table Header --- */
+.table-card thead th {
+  background: #F0F4FF;
+  color: #3322FF;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 12px 14px;
+  border-bottom: 2px solid #ECECEC;
+  letter-spacing: 0.5px;
+}
+
+.table-card thead th:first-child {
+  border-top-left-radius: 16px;
+}
+
+.table-card thead th:last-child {
+  border-top-right-radius: 16px;
+}
+
+/* --- Table Body --- */
+.table-card tbody td {
+  padding: 4px 14px;
+  color: #282828;
+  font-size: 14px;
+  border-bottom: 1px solid #ECECEC;
+  background: #fff;
+}
+
+.table-card tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-card tbody tr:hover {
+  background: #F5F6FA;
+}
+
+/* --- Table Row Rounded Corners --- */
+.table-card tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 16px;
+}
+
+.table-card tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 16px;
+}
+
+/* --- Action Icon Buttons --- */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: auto;
+  border-radius: 50%;
+  margin: 0 4px;
+  box-shadow: 0 1px 4px rgba(40, 40, 40, 0.08);
+  transition: background 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.action-btn {
+  background: #0000;
+  color: #fff;
+}
+
+.action-btn.edit .icon {
+  fill: #2211AA;
+}
+
+.action-btn.edit:hover .icon {
+  fill: #fff;
+}
+
+.action-btn.edit:hover {
+  background: #2211AA;
+}
+
+.action-btn.delete:hover {
+  background: #D9363E;
+}
+
+.action-btn.delete .icon {
+  fill: #D9363E;
+}
+
+.action-btn.delete:hover .icon {
+  fill: #fff;
+}
+
+
+/* Fix autofill background and text color for MUI TextField */
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset !important; /* match your input bg */
+  box-shadow: 0 0 0 1000px #fff inset !important;
+  -webkit-text-fill-color: #222 !important; /* match your text color */
+  caret-color: #222 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.ql-editor{
+  min-height:200px;
+}
+
+[data-cteditor] ul {
+  padding-left: 40px !important;
+}

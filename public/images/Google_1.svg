@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_d_5544_1715)">
+<circle cx="16" cy="14" r="12" fill="#FCFCFC"/>
+</g>
+<path d="M24.5798 12.2863H23.875V12.25H16V15.75H20.9451C20.2236 17.7874 18.2851 19.25 16 19.25C13.1007 19.25 10.75 16.8993 10.75 14C10.75 11.1007 13.1007 8.75 16 8.75C17.3383 8.75 18.5559 9.25487 19.4829 10.0796L21.9579 7.60462C20.3951 6.14819 18.3047 5.25 16 5.25C11.1678 5.25 7.25 9.16781 7.25 14C7.25 18.8322 11.1678 22.75 16 22.75C20.8322 22.75 24.75 18.8322 24.75 14C24.75 13.4133 24.6896 12.8406 24.5798 12.2863Z" fill="#FFC107"/>
+<path d="M8.25879 9.92731L11.1336 12.0356C11.9115 10.1098 13.7954 8.75 15.9999 8.75C17.3382 8.75 18.5558 9.25488 19.4829 10.0796L21.9578 7.60463C20.395 6.14819 18.3047 5.25 15.9999 5.25C12.639 5.25 9.72441 7.14744 8.25879 9.92731Z" fill="#FF3D00"/>
+<path d="M16.0001 22.7498C18.2603 22.7498 20.3139 21.8849 21.8666 20.4783L19.1585 18.1867C18.2504 18.8772 17.1409 19.2507 16.0001 19.2498C13.7243 19.2498 11.7918 17.7986 11.0638 15.7734L8.21045 17.9719C9.65857 20.8056 12.5994 22.7498 16.0001 22.7498Z" fill="#4CAF50"/>
+<path d="M24.5798 12.2863H23.875V12.25H16V15.75H20.9451C20.6 16.7197 19.9783 17.567 19.157 18.1873L19.1583 18.1864L21.8664 20.4781C21.6748 20.6522 24.75 18.375 24.75 14C24.75 13.4133 24.6896 12.8406 24.5798 12.2863Z" fill="#1976D2"/>
+<defs>
+<filter id="filter0_d_5544_1715" x="0" y="0" width="32" height="32" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="2"/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_5544_1715"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_5544_1715" result="shape"/>
+</filter>
+</defs>
+</svg>
