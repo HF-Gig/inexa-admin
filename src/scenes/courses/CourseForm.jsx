@@ -74,7 +74,7 @@ const CourseForm = ({ mode = "add", page }) => {
                 if ((mode === "edit" || mode === "view") && id && filters) {
                     setLoading(true);
                     api.get(`/courses/${id}`).then(res => {
-                        const { owner, subjects, transcript_languages, available_languages, staff, facilitator, staff_uuids, efforts, ...data } = res.data.data || {};
+                        const { owner, subjects, transcript_languages, available_languages, staff, facilitator, staff_uuids, skills, efforts, ...data } = res.data.data || {};
                         const ownerObj = owner ? filters?.owners.find(o => o.name === owner.name) : null;
                         const providerObj = data.course_provider_id ? filters?.course_providers?.find(p => p.id === data.course_provider_id) : null;
                         setOwnerInput(ownerObj ? ownerObj.name : '');
@@ -88,12 +88,17 @@ const CourseForm = ({ mode = "add", page }) => {
                             ...safeData,
                             outcome: data.outcome || '',
                             enrollment_count: data.enrollment_count,
+                            price: data.price,
+                            register_link: data.register_link,
                             provider: providerObj,
                             // Map owners to owner object
                             owner: ownerObj,
                             // Map staff to staff (array of UUIDs or IDs)
                             staff: Array.isArray(staff)
                                 ? staff.map(s => s.id || s.uuid || s)
+                                : [],
+                            skills: Array.isArray(skills)
+                                ? skills
                                 : [],
                             facilitator: Array.isArray(facilitator)
                                 ? facilitator.map(s => s.id || s.uuid || s)
@@ -303,6 +308,18 @@ const CourseForm = ({ mode = "add", page }) => {
                     }else{
                         formData.append('enrollment_count', null);
                     }
+                    if (values.price !== null && values.price !== undefined) {
+                        formData.append('price', values.price)
+                    }else{
+                        formData.append('price', null);
+                    }
+
+                    if (values.register_link !== null && values.register_link !== undefined) {
+                        formData.append('register_link', values.register_link)
+                    }else{
+                        formData.append('register_link', null);
+                    }
+                    
                     if (values.provider) formData.append('course_provider_id', values.provider.id);
                     if (values.duration_value && values.duration_unit) {
                         formData.append('weeks_to_complete', `${values.duration_value} ${values.duration_unit}`);
@@ -318,7 +335,7 @@ const CourseForm = ({ mode = "add", page }) => {
                     }
                     // Append all other fields that are not handled above
                     const skipFields = [
-                        'subject', 'order', 'owner', 'image_url', 'staff', 'facilitator', 'enrollment_count', 'weeks_to_complete', 'languages', 'course_provider_id', 'efforts', 'transcript_languages', 'breakdown_description'
+                        'subject', 'order', 'owner', 'image_url', 'staff', 'facilitator', 'enrollment_count', 'price', 'register_link', 'weeks_to_complete', 'languages', 'course_provider_id', 'efforts', 'transcript_languages', 'breakdown_description'
                     ];
                     Object.entries(values).forEach(([key, value]) => {
                         if (skipFields.includes(key)) return;
@@ -1016,6 +1033,32 @@ const CourseForm = ({ mode = "add", page }) => {
                                         disabled={mode === 'view'}
                                     />
                                 </Grid>
+                                {isProgram && 
+                                    <Grid item xs={12} md={4}>
+                                        <CommonTextField
+                                            name="price"
+                                            label="Price"
+                                            value={values.price}
+                                            onChange={e => setFieldValue("price", e.target.value)}
+                                            error={touched.price && Boolean(errors.price)}
+                                            helperText={errors.price}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
+                                {isProgram && 
+                                    <Grid item xs={12} md={4}>
+                                        <CommonTextField
+                                            name="register_link"
+                                            label="Registration Link"
+                                            value={values.register_link}
+                                            onChange={e => setFieldValue("register_link", e.target.value)}
+                                            error={touched.register_link && Boolean(errors.register_link)}
+                                            helperText={errors.register_link}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
                                 <Grid item xs={12} md={4}>
                                     <CommonTextField
                                         name="min_effort"

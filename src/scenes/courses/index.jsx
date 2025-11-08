@@ -182,7 +182,7 @@ const Courses = ({ pageType = 'courses' }) => {
   useEffect(() => {
     fetchCourses();
     fetchUniversities();
-    fetchTypes();
+    // fetchTypes();
     // eslint-disable-next-line
   }, [page, rowsPerPage, sortCol, sortDir, debouncedSearch, universityFilter, typeFilter, location]);
 
@@ -244,16 +244,16 @@ const Courses = ({ pageType = 'courses' }) => {
     }
   };
 
-  const fetchTypes = async () => {
-    try {
-      const response = await api.get('/program-types');
-      if (response.status === 200) {
-        setTypes(response.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch types:', error);
-    }
-  };
+  // const fetchTypes = async () => {
+  //   try {
+  //     const response = await api.get('/program-types');
+  //     if (response.status === 200) {
+  //       setTypes(response.data || []);
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to fetch types:', error);
+  //   }
+  // };
 
   const handleDeleteCourse = async (courseId) => {
     try {

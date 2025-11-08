@@ -22,6 +22,7 @@ export const baseInitialValues = {
   image_url: null,
   estimated_hours: "",
   transcript_languages: [],
+  price: "",
   course_modules: "",
   min_effort: "",
   max_effort: "",
