@@ -35,7 +35,7 @@ const Users = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortCol, setSortCol] = useState("id");
   const [sortDir, setSortDir] = useState("desc");
-console.log('users :>> ', users);
+  console.log('users :>> ', users);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -136,7 +136,7 @@ console.log('users :>> ', users);
   const handleDeleteUser = async (userId) => {
     try {
       await api.delete(`/users/${userId}`);
-      setUsers({...users, data: users.data.filter(user => user.id !== userId)});
+      setUsers({ ...users, data: users.data.filter(user => user.id !== userId) });
       setSnackbar({
         open: true,
         message: "User deleted successfully!",
@@ -176,9 +176,11 @@ console.log('users :>> ', users);
         }
         await api.put(`/users/${editingUser.id}`, dataToSend);
         setUsers(
-          {...users, data : users?.data.map((user) =>
-            user.id === editingUser.id ? { ...user, ...dataToSend } : user
-          )}
+          {
+            ...users, data: users?.data.map((user) =>
+              user.id === editingUser.id ? { ...user, ...dataToSend } : user
+            )
+          }
         );
         setSnackbar({
           open: true,
@@ -220,32 +222,32 @@ console.log('users :>> ', users);
   }
 
   // Apply frontend filtering by name or email
-let filteredUsers = users?.data?.filter((u) => {
-  const fullName = `${u.first_name} ${u.last_name}`.toLowerCase();
-  const email = u.email?.toLowerCase() || "";
-  const term = searchTerm.toLowerCase();
-  return fullName.includes(term) || email.includes(term);
-})
-  .map((u) => ({
-    ...u,
-    name: `${u.first_name} ${u.last_name}`,
-  }));
+  let filteredUsers = users?.data?.filter((u) => {
+    const fullName = `${u.first_name} ${u.last_name}`.toLowerCase();
+    const email = u.email?.toLowerCase() || "";
+    const term = searchTerm.toLowerCase();
+    return fullName.includes(term) || email.includes(term);
+  })
+    .map((u) => ({
+      ...u,
+      name: `${u.first_name} ${u.last_name}`,
+    }));
 
-// Apply frontend sorting
-if (sortCol && filteredUsers) {
-  filteredUsers.sort((a, b) => {
-    const aVal = a[sortCol];
-    const bVal = b[sortCol];
-    if (typeof aVal === 'number' && typeof bVal === 'number') {
-      return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-    } else {
-      const aStr = String(aVal || '').toLowerCase();
-      const bStr = String(bVal || '').toLowerCase();
-      return sortDir === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
-    }
-  });
-}
-  
+  // Apply frontend sorting
+  if (sortCol && filteredUsers) {
+    filteredUsers.sort((a, b) => {
+      const aVal = a[sortCol];
+      const bVal = b[sortCol];
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+      } else {
+        const aStr = String(aVal || '').toLowerCase();
+        const bStr = String(bVal || '').toLowerCase();
+        return sortDir === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+      }
+    });
+  }
+
   return (
     <Box>
       <Header
@@ -352,11 +354,35 @@ if (sortCol && filteredUsers) {
         <Formik
           initialValues={
             editingUser ? (() => {
-              const phoneParts = (editingUser.phone || '').split(' ');
+              const fullPhone = editingUser.phone || '';
+              let country_code = '+1';
+              let phone = '';
+
+              if (fullPhone.includes(' ')) {
+                // Handle space-separated format: "+237 671234567"
+                const parts = fullPhone.split(' ');
+                country_code = parts[0];
+                phone = parts.slice(1).join('');
+              } else if (fullPhone.startsWith('+')) {
+                // Handle E.164 format: "+237671234567"
+                // Find the longest matching country code from countriesData
+                const sortedCountries = [...countriesData].sort((a, b) => b.code.length - a.code.length);
+                const matchingCountry = sortedCountries.find(c => fullPhone.startsWith(`+${c.code}`));
+
+                if (matchingCountry) {
+                  country_code = `+${matchingCountry.code}`;
+                  phone = fullPhone.slice(country_code.length);
+                } else {
+                  phone = fullPhone;
+                }
+              } else {
+                phone = fullPhone;
+              }
+
               return {
                 ...editingUser,
-                country_code: phoneParts[0] || '+1',
-                phone: phoneParts.slice(1).join(' ') || '',
+                country_code,
+                phone,
               };
             })() : {
               first_name: "",

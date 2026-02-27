@@ -9,8 +9,11 @@ import ManageCourses from './staff/ManageCourses';
 import Organization from "./organization";
 import OrganizationForm from "./organization/OrganizationForm";
 import Management from "./management";
+import Payments from "./payments";
 export { default as Staff } from "./staff";
 export { default as StaffForm } from "./staff/StaffForm";
+export { default as Subscriptions } from "./subscriptions";
+export { default as Costs } from "./costs";
 
 export {
   Navbar,
@@ -23,5 +26,6 @@ export {
   ManageCourses,
   Organization,
   OrganizationForm,
-  Management
+  Management,
+  Payments,
 };

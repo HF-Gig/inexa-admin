@@ -11,6 +11,9 @@ import {
   StaffForm,
   ManageCourses,
   Management,
+  Subscriptions,
+  Payments,
+  Costs,
 } from "./scenes";
 import PrivateRoute from "./components/PrivateRoute";
 import Organization from "./scenes/organization";
@@ -236,13 +239,37 @@ const AppRouter = () => {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/subscriptions"
+            element={
+              <PrivateRoute>
+                <Subscriptions />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <PrivateRoute>
+                <Payments />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/costs"
+            element={
+              <PrivateRoute>
+                <Costs />
+              </PrivateRoute>
+            }
+          />
         </Route>
       </Routes>
     </Router>
   );
 };
 
-function CourseFormWrapper({page = "course"}) {
+function CourseFormWrapper({ page = "course" }) {
   const { type } = useParams();
   let mode = "add";
   if (type === "edit") mode = "edit";

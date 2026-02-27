@@ -18,7 +18,7 @@ const Header = ({ title, subtitle, action }) => {
         {action && <Box ml={2}>{action}</Box>}
       </Box>
       {subtitle && (
-        <Typography variant="h5" color={colors.greenAccent[400]}>
+        <Typography variant="h5" color={colors.black}>
           {subtitle}
         </Typography>
       )}

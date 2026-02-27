@@ -38,7 +38,7 @@ const Management = () => {
       const res = await api.get(`${BASE_URL}/users?page=${page + 1}&page_size=${rowsPerPage}`);
       setUsers(res.data.data);
       setTotal(res.data.pagination?.totalItems || 0);
-      console.log("Fetched users:", res.data.data);
+      //console.log("Fetched users:", res.data.data);
     }
 
     fetchAllUsers();
@@ -84,13 +84,13 @@ const Management = () => {
     if (currentUserRole == user.role && currentUserRole !== 'owner') {
       setIsOwnRole(true);
     }
-    if (currentUserRole !== 'owner' && user.role === 'owner' ) {
+    if (currentUserRole !== 'owner' && user.role === 'owner') {
       setSnackbarMessage('You cannot edit owner\'s profile.');
       setSnackbarOpen(true);
       setEditDialogOpen(false);
       return;
     }
-    if (currentUserRole === 'manager' && user.role === 'admin' ) {
+    if (currentUserRole === 'manager' && user.role === 'admin') {
       setSnackbarMessage('You cannot edit admin\'s profile.');
       setSnackbarOpen(true);
       setEditDialogOpen(false);
@@ -109,10 +109,10 @@ const Management = () => {
 
   useEffect(() => {
     const checkCanEditRole = () => {
-      if(getCurrentUserRole() === 'owner') {
+      if (getCurrentUserRole() === 'owner') {
         setCanEditRole(true);
       }
-      else if(getCurrentUserRole() === 'admin') {
+      else if (getCurrentUserRole() === 'admin') {
         setCanEditRole(true);
       }
       else {
@@ -166,7 +166,7 @@ const Management = () => {
   const handleCreateUser = async () => {
     try {
       const dataToSend = { ...addFormData };
-      console.log("Creating user with data:", dataToSend);
+      //console.log("Creating user with data:", dataToSend);
       const response = await api.post(`${BASE_URL}/users`, dataToSend);
       setUsers([...users, response.data]);
       setAddDialogOpen(false);
@@ -309,7 +309,7 @@ const Management = () => {
         <DialogTitle sx={{ color: 'white' }}>Edit User</DialogTitle>
         <DialogContent>
           <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
-                        <TextField
+            <TextField
               label="First Name"
               value={formData.first_name}
               onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}

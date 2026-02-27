@@ -23,68 +23,68 @@ const SortableItem = ({ id, position, course, onEdit, currentTab }) => {
       <Box sx={{ position: 'relative', cursor: 'grab' }}>
         <Card {...listeners} sx={{ bgcolor: 'white', borderRadius: '18px', borderBottomLeftRadius: 0, boxShadow: '0 4px 8px rgba(0,0,0,0.1)', '&:hover': { boxShadow: '0 8px 16px rgba(0,0,0,0.4)' }, transition: 'box-shadow 0.3s' }}>
           <CardContent sx={{ p: 3, minHeight: '320px', position: 'relative', pl: 6, pr: '14px', pt: 5, pb: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, color: 'primary.main', fontSize: '14px', fontWeight: 600 }}>Position {position}</Typography>
-          {course ? (
-            <Box>
-              {/* Logos */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 36, mb: 1 }}>
-                <img src={`${import.meta.env.VITE_API_URL}${course?.course_provider?.image}`} alt="logo" style={{ height: 18 }} />
-                <Box sx={{ width: 1.33, height: 36, borderLeft: '1.33px solid black', borderRadius: 1 }} />
-                <img src={course.owner?.certificate_logo_image_url} alt="Certificate" style={{ height: 16 }} />
-                <Box sx={{ ml: 'auto' }}>
-                  {/* Placeholder for favorite, but since it's admin, omit or use edit icon if needed */}
+            <Typography variant="subtitle2" sx={{ mb: 1, color: 'primary.main', fontSize: '14px', fontWeight: 600 }}>Position {position}</Typography>
+            {course ? (
+              <Box>
+                {/* Logos */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 36, mb: 1 }}>
+                  <img src={`${import.meta.env.VITE_API_URL}${course?.course_provider?.image}`} alt="logo" style={{ height: 18 }} />
+                  <Box sx={{ width: 1.33, height: 36, borderLeft: '1.33px solid black', borderRadius: 1 }} />
+                  <img src={course.owner?.certificate_logo_image_url} alt="Certificate" style={{ height: 16 }} />
+                  <Box sx={{ ml: 'auto' }}>
+                    {/* Placeholder for favorite, but since it's admin, omit or use edit icon if needed */}
+                  </Box>
+                </Box>
+                {/* Institute */}
+                <Typography variant="body2" sx={{ fontSize: 12, fontWeight: 500, letterSpacing: -0.02 * 12, lineHeight: 1.5, color: '#666666', height: 18, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mb: 1, mt: 0.5 }}>
+                  {course.owner?.name}
+                </Typography>
+                {/* Type Badge */}
+                <Box sx={{ mt: 4, mb: 2, px: 3, py: 0.8, borderRadius: '9999px', fontSize: 10, fontWeight: 500, lineHeight: 1, display: 'inline-block', bgcolor: '#3322ff', color: '#fff' }}>
+                  {course.content_type === 'program' ? course.program_type_name : capitalizeFirst(course.content_type)}
+                </Box>
+                {/* Title */}
+                <Typography variant="h6" sx={{ height: 66, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', mb: 4, fontSize: 14, color: '#282828', letterSpacing: -0.05 * 14, lineHeight: 1.57, fontWeight: 500 }}>
+                  {course.title}
+                </Typography>
+                {/* Details */}
+                <Box sx={{ display: 'grid', gap: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Schedule sx={{ fontSize: 12, color: course.pacing_type === 'self_paced' ? '#282828' : '#3322ff' }} />
+                    <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 500, lineHeight: 1.18, letterSpacing: -0.02 * 11, color: course.pacing_type === 'self_paced' ? '#282828' : '#3322ff' }}>
+                      {course.pacing_type === 'self_paced' ? 'Self Paced' : 'Fully Interactive Learning'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <AccessTime sx={{ fontSize: 12, color: '#282828' }} />
+                    <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 500, lineHeight: 1.18, letterSpacing: -0.02 * 11, color: '#282828' }}>
+                      {course.weeks_to_complete ? `${Math.ceil(course.weeks_to_complete / 4)} months` : '-'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <School sx={{ fontSize: 12, color: '#282828' }} />
+                    <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 500, lineHeight: 1.18, letterSpacing: -0.02 * 11, color: '#282828' }}>
+                      {course.content_type !== 'program' ? capitalizeFirst(course.course_level) : `${course.total_courses || 0} Courses`}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Event sx={{ fontSize: 12, color: '#282828' }} />
+                    <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 500, lineHeight: 1.18, letterSpacing: -0.02 * 11, color: '#282828' }}>
+                      {course.start_date ? new Date(course.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
-              {/* Institute */}
-              <Typography variant="body2" sx={{ fontSize: 12, fontWeight: 500, letterSpacing: -0.02 * 12, lineHeight: 1.5, color: '#666666', height: 18, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mb: 1, mt: 0.5 }}>
-                {course.owner?.name}
-              </Typography>
-              {/* Type Badge */}
-              <Box sx={{ mt: 4, mb: 2, px: 3, py: 0.8, borderRadius: '9999px', fontSize: 10, fontWeight: 500, lineHeight: 1, display: 'inline-block', bgcolor: '#3322ff', color: '#fff' }}>
-                {course.content_type === 'program' ? course.program_type_name : capitalizeFirst(course.content_type)}
+            ) : (
+              <Box sx={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'grey.200', borderRadius: 1 }}>
+                <Typography>No course selected</Typography>
               </Box>
-              {/* Title */}
-              <Typography variant="h6" sx={{ height: 66, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', mb: 4, fontSize: 14, color: '#282828', letterSpacing: -0.05 * 14, lineHeight: 1.57, fontWeight: 500 }}>
-                {course.title}
-              </Typography>
-              {/* Details */}
-              <Box sx={{ display: 'grid', gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <Schedule sx={{ fontSize: 12, color: course.pacing_type === 'self_paced' ? '#282828' : '#3322ff' }} />
-                  <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 500, lineHeight: 1.18, letterSpacing: -0.02 * 11, color: course.pacing_type === 'self_paced' ? '#282828' : '#3322ff' }}>
-                    {course.pacing_type === 'self_paced' ? 'Self Paced' : 'Fully Interactive Learning'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <AccessTime sx={{ fontSize: 12, color: '#282828' }} />
-                  <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 500, lineHeight: 1.18, letterSpacing: -0.02 * 11, color: '#282828' }}>
-                    {course.weeks_to_complete ? `${Math.ceil(course.weeks_to_complete / 4)} months` : '-'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <School sx={{ fontSize: 12, color: '#282828' }} />
-                  <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 500, lineHeight: 1.18, letterSpacing: -0.02 * 11, color: '#282828' }}>
-                    {course.content_type !== 'program' ? capitalizeFirst(course.course_level) : `${course.total_courses || 0} Courses`}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <Event sx={{ fontSize: 12, color: '#282828' }} />
-                  <Typography variant="body2" sx={{ fontSize: 11, fontWeight: 500, lineHeight: 1.18, letterSpacing: -0.02 * 11, color: '#282828' }}>
-                    {course.start_date ? new Date(course.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          ) : (
-            <Box sx={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'grey.200', borderRadius: 1 }}>
-              <Typography>No course selected</Typography>
-            </Box>
-          )}
-        </CardContent>
-      </Card>
-      <Button size="small" variant="outlined" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(currentTab, position); }} sx={{ position: 'absolute', top: 8, right: 8, fontSize: '12px', px: 2, py: 0.5, borderRadius: 2 }}>
-        Edit
-      </Button>
+            )}
+          </CardContent>
+        </Card>
+        <Button size="small" variant="outlined" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(currentTab, position); }} sx={{ position: 'absolute', top: 8, right: 8, fontSize: '12px', px: 2, py: 0.5, borderRadius: 2 }}>
+          Edit
+        </Button>
       </Box>
     </Grid>
   );
@@ -356,7 +356,7 @@ const Featured = () => {
       });
 
       await Promise.all(promises);
-      console.log('✅ Facilitator positions updated!');
+      //console.log('✅ Facilitator positions updated!');
       // Refetch to ensure consistency
       const res = await api.get('/staff/get-featured-facilitators');
       if (res.data && res.data.data && Array.isArray(res.data.data)) {
@@ -464,7 +464,7 @@ const Featured = () => {
       const fetchSubjects = async () => {
         try {
           const res = await api.get('/subjects');
-          console.log("Fetched subjects:", res.data);
+          //console.log("Fetched subjects:", res.data);
           if (res.data && Array.isArray(res.data)) {
             const sorted = [...res.data].sort((a, b) => {
               if (a.status === b.status) {
@@ -487,7 +487,7 @@ const Featured = () => {
 
   useEffect(() => {
     const newCourses = allCourses[currentTab] || [];
-    console.log("Setting courses for tab", currentTab, ":", newCourses);
+    //console.log("Setting courses for tab", currentTab, ":", newCourses);
     setCourses(newCourses);
     if (newCourses.length === 0 && !loadedCategories[currentTab]) {
       loadCoursesForCategory(currentTab);
@@ -526,7 +526,7 @@ const Featured = () => {
       const fetchFacilitators = async () => {
         try {
           const res = await api.get('/staff/get-featured-facilitators');
-          console.log("Featured Facilitators fetched: ", res.data.data);
+          //console.log("Featured Facilitators fetched: ", res.data.data);
           if (res.data && res.data.data && Array.isArray(res.data.data)) {
             setFacilitators(res.data.data);
           } else {
@@ -540,7 +540,7 @@ const Featured = () => {
       const fetchAllStaff = async () => {
         try {
           const res = await api.get('/staff/inexa-staff/get-all');
-          console.log("Fetched inexa staff for dropdown: ", res.data.data)
+          //console.log("Fetched inexa staff for dropdown: ", res.data.data)
           if (res.data && res.data.data && Array.isArray(res.data.data)) {
             setAllStaff(res.data.data);
           } else {
@@ -565,12 +565,12 @@ const Featured = () => {
         popular: Array(8).fill(null),
         courses_certificates: Array(6).fill(null),
         'professional-certificate': Array(6).fill(null),
-        micro_masters_bachelors: Array(6).fill(null)
+        degree: Array(6).fill(null)
       };
       const categories = ['courses_certificates', 'micro_masters_bachelors', 'degree'];
       for (const cat of categories) {
         if (featuredData.null[cat]) {
-          console.log(`Fetching full courses for category: ${cat}, initial length: ${featuredData.null[cat].length}`);
+          //console.log(`Fetching full courses for category: ${cat}, initial length: ${featuredData.null[cat].length}`);
           const fullCourses = await Promise.all(
             featuredData.null[cat].map(async (course) => {
               if (course && course.id) {
@@ -586,19 +586,19 @@ const Featured = () => {
               }
             })
           );
-          console.log(`Fetched full courses for ${cat}, length: ${fullCourses.length}`);
+          //console.log(`Fetched full courses for ${cat}, length: ${fullCourses.length}`);
           // Pad the array to 15 with nulls for placeholders
           featuredData.null[cat] = fullCourses.concat(Array(15 - fullCourses.length).fill(null));
-          console.log(`Padded array for ${cat}, final length: ${featuredData.null[cat].length}`);
+          //console.log(`Padded array for ${cat}, final length: ${featuredData.null[cat].length}`);
         } else {
-          console.log(`No data for category: ${cat}`);
+          //console.log(`No data for category: ${cat}`);
         }
       }
       // Fetch full courses for explore_menu
-      const exploreCategories = ['popular', 'courses_certificates', 'professional-certificate', 'micro_masters_bachelors'];
+      const exploreCategories = ['popular', 'courses_certificates', 'professional-certificate', 'degree'];
       for (const cat of exploreCategories) {
         if (featuredData.explore_menu[cat]) {
-          console.log(`Fetching full courses for explore_menu category: ${cat}`);
+          //console.log(`Fetching full courses for explore_menu category: ${cat}`);
           const fullCourses = await Promise.all(
             featuredData.explore_menu[cat].map(async (course) => {
               if (course && course.id) {
@@ -617,7 +617,7 @@ const Featured = () => {
           featuredData.explore_menu[cat] = fullCourses;
         }
       }
-      console.log("Setting featured data:", featuredData);
+      //console.log("Setting featured data:", featuredData);
       setFeatured(featuredData);
     } catch (error) {
       console.error('Error fetching data', error);
@@ -635,7 +635,7 @@ const Featured = () => {
         let query = search ? `search=${encodeURIComponent(search)}&` : '';
         const slugMap = {
           'courses_certificates': 'course,professional-certificate',
-          'micro_masters_bachelors': 'micromasters,microbachelors',
+          'micro_masters_bachelors': 'micromasters,microbachelors,xseries',
           'degree': 'degree',
           'popular': 'course,professional-certificate,micromasters,microbachelors,degree',
           'professional-certificate': 'professional-certificate'
@@ -687,7 +687,7 @@ const Featured = () => {
         // console.log('Payload being sent to backend:', payload);
         const resp = await api.put(`/courses/featured/${position}`, payload);
         // console.log("Response from save featured card: ", resp);
-        console.log("Response data:", resp.data);
+        //console.log("Response data:", resp.data);
         // window.location.reload();
         fetchData();
         setEditingPosition(null);
@@ -755,7 +755,7 @@ const Featured = () => {
   const handleSaveFacilitator = async () => {
     if (editingFacilitator && selectedFacilitator) {
       try {
-        console.log(`Editing Facilitator: ${JSON.stringify(editingFacilitator)}, Selected Facilitator: ${selectedFacilitator}`)
+        //console.log(`Editing Facilitator: ${JSON.stringify(editingFacilitator)}, Selected Facilitator: ${selectedFacilitator}`)
         if (editingFacilitator.id) {
           // Update existing
           await api.put(`/staff/update-featured-facilitator/${editingFacilitator.id}`, {
@@ -763,12 +763,12 @@ const Featured = () => {
           });
         } else {
           // Add new
-          console.log("Sending request to /staff/add-featured-facilitator")
+          //console.log("Sending request to /staff/add-featured-facilitator")
           const res = await api.post('/staff/add-featured-facilitator', {
             facilitator_id: selectedFacilitator
           });
-          console.log("Received response: ", res.data)
-          
+          //console.log("Received response: ", res.data)
+
         }
         setEditingFacilitator(null);
         setSelectedFacilitator(null);
@@ -820,7 +820,7 @@ const Featured = () => {
   };
 
   const loadAllCourses = async () => {
-    const categories = ['courses_certificates', 'micro_masters_bachelors', 'degree'];
+    const categories = ['courses_certificates', 'micro_masters_bachelors', 'degree', 'xseries'];
     const allData = {};
 
     // First, load from cache if available
@@ -849,7 +849,7 @@ const Featured = () => {
       const cacheKey = getCacheKey(category);
       apiCache.set(cacheKey, data);
       setLoadedCategories(prev => ({ ...prev, [category]: true }));
-      console.log(`Loaded fresh courses for ${category}:`, data.length);
+      //console.log(`Loaded fresh courses for ${category}:`, data.length);
     } catch (error) {
       console.error(`Error loading courses for ${category}:`, error);
     } finally {
@@ -861,7 +861,7 @@ const Featured = () => {
     let query = 'page_size=3500&';
     const slugMap = {
       'courses_certificates': 'course,professional-certificate',
-      'micro_masters_bachelors': 'micromasters,microbachelors',
+      'micro_masters_bachelors': 'micromasters,microbachelors,xseries',
       'degree': 'degree'
     };
     const slug = slugMap[category];
@@ -920,7 +920,7 @@ const Featured = () => {
         });
 
         await Promise.all(promises);
-        console.log("Backend update successful");
+        //console.log("Backend update successful");
         fetchData();
       } catch (error) {
         console.error("Error saving reorder", error);
@@ -979,10 +979,10 @@ const Featured = () => {
           </Grid>
           <Grid item xs={12} md={3}>
             <Typography variant="h6" sx={{ mb: 2 }}>Degree</Typography>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => handleDragEndExplore('micro_masters_bachelors', event)}>
-              <SortableContext items={Array.from({ length: featured.explore_menu?.micro_masters_bachelors?.length || 3 }, (_, i) => `slot-micro_masters_bachelors-${i}`)}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => handleDragEndExplore('degree', event)}>
+              <SortableContext items={Array.from({ length: featured.explore_menu?.degree?.length || 3 }, (_, i) => `slot-degree-${i}`)}>
                 <Grid container spacing={2}>
-                  {degreePlaceholders.map((_, idx) => renderSortableItem(idx, 'micro_masters_bachelors', idx))}
+                  {degreePlaceholders.map((_, idx) => renderSortableItem(idx, 'degree', idx))}
                 </Grid>
               </SortableContext>
             </DndContext>
@@ -999,7 +999,7 @@ const Featured = () => {
       </Typography>
       <Tabs value={currentTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto" sx={{ mb: 2 }}>
         <Tab sx={{ '&:hover': { color: 'white' } }} label="Courses & Certificates" value="courses_certificates" />
-        <Tab sx={{ '&:hover': { color: 'white' } }} label="MicroMasters & MicroBachelors" value="micro_masters_bachelors" />
+        <Tab sx={{ '&:hover': { color: 'white' } }} label="MicroMasters & XSeries" value="micro_masters_bachelors" />
         <Tab sx={{ '&:hover': { color: 'white' } }} label="Degree Programs" value="degree" />
         <Tab sx={{ '&:hover': { color: 'white' } }} label="Explore Menu" value="explore_menu" />
         <Tab sx={{ '&:hover': { color: 'white' } }} label="Popular Subjects" value="subjects" />
@@ -1074,7 +1074,7 @@ const Featured = () => {
               {Array.from({ length: 15 }, (_, i) => i + 1).map(position => {
                 const course = featuredCourses[position - 1];
                 const itemId = course?.id || `empty-${position}`;
-              return <SortableItem key={itemId} id={itemId} position={position} course={course} onEdit={handleEdit} currentTab={currentTab} />;
+                return <SortableItem key={itemId} id={itemId} position={position} course={course} onEdit={handleEdit} currentTab={currentTab} />;
               })}
             </Grid>
           </SortableContext>
@@ -1083,34 +1083,33 @@ const Featured = () => {
       <Dialog open={editingPosition !== null} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ color: "white" }}>Select Course for Position {editingPosition?.position}</DialogTitle>
         <DialogContent>
-            <CommonAutocomplete
-              label="Course"
-              fetchOptions={fetchOptionsForEdit}
-              value={selectedCourse}
-              onChange={(value) => {
-                console.log("🧠 Selected course:", value);
-                setSelectedCourse(value);
-              }}
-              placeholder="Select a course"
-              isSelect={true}
-              externalFilter={true}
-              fetchOnMount={false}
-              sx={{
-                '& .MuiInputLabel-root': {
+          <CommonAutocomplete
+            label="Course"
+            fetchOptions={fetchOptionsForEdit}
+            value={selectedCourse}
+            onChange={(value) => {
+              //console.log("🧠 Selected course:", value);
+              setSelectedCourse(value);
+            }}
+            placeholder="Select a course"
+            isSelect={true}
+            externalFilter={true}
+            fetchOnMount={false}
+            sx={{
+              '& .MuiInputLabel-root': {
+                color: 'white',
+                '&.Mui-focused': {
                   color: 'white',
-                  '&.Mui-focused': {
-                    color: 'white',
-                  },
-                  '&.MuiFormLabel-filled': {
-                    color: 'white',
-                  },
                 },
-              }}
-            />
+                '&.MuiFormLabel-filled': {
+                  color: 'white',
+                },
+              },
+            }}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          {console.log("Using course: ", selectedCourse)}
           <Button type='submit' onClick={handleSave} variant="contained" disabled={!selectedCourse}>
             Save
           </Button>

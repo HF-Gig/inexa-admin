@@ -44,17 +44,6 @@ const Organization = () => {
     }, [page, rowsPerPage, sortCol, sortDir]);
 
     useEffect(() => {
-        if (!search.trim()) {
-            setOrganizations(allOrganizations);
-        } else {
-            const filtered = allOrganizations.filter(org =>
-            org.name?.toLowerCase().includes(search.toLowerCase())
-            );
-            setOrganizations(filtered);
-        }
-    }, [search, allOrganizations]);
-
-    useEffect(() => {
         let sortedOrgs = [...allOrganizations];
         if (sortCol) {
             sortedOrgs.sort((a, b) => {
@@ -69,11 +58,12 @@ const Organization = () => {
                 }
             });
         }
+
         if (!search.trim()) {
             setOrganizations(sortedOrgs);
         } else {
             const filtered = sortedOrgs.filter(org =>
-                org.name?.toLowerCase().includes(search.toLowerCase())
+                org.organization_name?.toLowerCase().includes(search.toLowerCase())
             );
             setOrganizations(filtered);
         }
@@ -89,10 +79,10 @@ const Organization = () => {
     const handleSortChange = (col, dir) => {
         setSortCol(col);
         setSortDir(dir);
-        fetchOwners(page, rowsPerPage, col, dir, debouncedSearch);
+        fetchOwners(page, rowsPerPage, col, dir);
     };
 
-    const fetchOwners = async () => {
+    const fetchOwners = async (page, rowsPerPage, col, dir, searchQuery = "") => {
         try {
             setLoading(true);
             let pageNum = 1;
@@ -100,15 +90,15 @@ const Organization = () => {
             let hasMore = true;
 
             while (hasMore) {
-            const res = await api.get(`/owners?page=${pageNum}&page_size=100`);
-            if (res.status !== 200) throw new Error("Failed to fetch owners");
+                const res = await api.get(`/organization?page=${pageNum}&page_size=100&search=${searchQuery}`);
+                if (res.status !== 200) throw new Error("Failed to fetch owners");
 
-            const dataChunk = res.data.data || [];
-            allData = [...allData, ...dataChunk];
+                const dataChunk = res.data.data || [];
+                allData = [...allData, ...dataChunk];
 
-            const pagination = res.data.pagination;
-            hasMore = pagination && pageNum < pagination.totalPages;
-            pageNum++;
+                const pagination = res.data.pagination;
+                hasMore = pagination && pageNum < pagination.totalPages;
+                pageNum++;
             }
 
             setAllOrganizations(allData);
@@ -117,9 +107,9 @@ const Organization = () => {
         } catch (error) {
             console.error(error);
             setSnackbar({
-            open: true,
-            message: "Failed to fetch owners. Please try again.",
-            severity: "error",
+                open: true,
+                message: "Failed to fetch owners. Please try again.",
+                severity: "error",
             });
         } finally {
             setLoading(false);
@@ -128,7 +118,7 @@ const Organization = () => {
 
     const handleDeleteOwner = async (orgId) => {
         try {
-            await api.delete(`/owners/${orgId}`).then((res) => {
+            await api.delete(`/organization/${orgId}`).then((res) => {
                 if (res.status === 200) {
                     setSnackbar({ open: true, message: "Owner deleted successfully!", severity: "success" });
                     fetchOwners();
@@ -155,26 +145,26 @@ const Organization = () => {
     const tableColumns = [
         { name: "id", label: "ID", width: 80 },
         {
-            name: "certificate_logo_image_url",
+            name: "organization_logo_image_url",
             label: "Logo",
             width: 80,
             render: (row) =>
-                row.certificate_logo_image_url ? (
+                row.organization_logo_image_url ? (
                     <Avatar
-                        src={row.certificate_logo_image_url}
-                        alt={row.name}
+                        src={row.organization_logo_image_url}
+                        alt={row.organization_name}
                         sx={{ cursor: "pointer" }}
                         onClick={() => {
                             console.log("Using image path:", row);
-                            setLogoDialogUrl(row.certificate_logo_image_url);
+                            setLogoDialogUrl(row.organization_logo_image_url);
                             setLogoDialogOpen(true);
                         }}
                     />
                 ) : (
-                    <Avatar>{row.name?.[0]}</Avatar>
+                    <Avatar>{row.organization_name?.[0]}</Avatar>
                 ),
         },
-        { name: "name", label: "Name", width: 180 },
+        { name: "organization_name", label: "Name", width: 180 },
     ];
 
     return (

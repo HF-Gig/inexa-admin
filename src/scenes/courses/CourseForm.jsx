@@ -57,113 +57,130 @@ const CourseForm = ({ mode = "add", page }) => {
     const [filteredProgramTypes, setFilteredProgramTypes] = useState([]);
     const [searchItems, setSearchItems] = useSearchParams();
     const pageType = searchItems.get('pageType');
+    const [ownerLogoPreview, setOwnerLogoPreview] = useState(null);
+    const [providerLogoPreview, setProviderLogoPreview] = useState(null);
 
     const [imagePreview, setImagePreview] = useState(null);
+    const [pdfPreview, setPdfPreview] = useState(null);
 
     useEffect(() => {
         const fetchFilters = async () => {
-            console.log('Fetching filters for page:', page);
+            //console.log('Fetching filters for page:', page);
             const res = await api.get("/courses/all-filters" + (page === 'program' ? `?type=programs` : ''));
-            console.log('Fetched filters:', res.data);
+            //console.log('Fetched filters:', res.data);
             setFilters(res.data);
         };
         fetchFilters();
     }, [page]);
 
     useEffect(() => {
-                if ((mode === "edit" || mode === "view") && id && filters) {
-                    setLoading(true);
-                    api.get(`/courses/${id}`).then(res => {
-                        const { owner, subjects, transcript_languages, available_languages, staff, facilitator, staff_uuids, skills, efforts, ...data } = res.data.data || {};
-                        const ownerObj = owner ? filters?.owners.find(o => o.name === owner.name) : null;
-                        const providerObj = data.course_provider_id ? filters?.course_providers?.find(p => p.id === data.course_provider_id) : null;
-                        setOwnerInput(ownerObj ? ownerObj.name : '');
-                        setProviderInput(providerObj ? providerObj.name : '');
-                        const safeData = Object.fromEntries(
-                            Object.entries(data).filter(([key]) => key in getInitialValues(page))
-                        );
-                        // Transform API response to match form structure
-                        const transformed = {
-                            ...getInitialValues(page),
-                            ...safeData,
-                            outcome: data.outcome || '',
-                            enrollment_count: data.enrollment_count,
-                            price: data.price,
-                            register_link: data.register_link,
-                            provider: providerObj,
-                            // Map owners to owner object
-                            owner: ownerObj,
-                            // Map staff to staff (array of UUIDs or IDs)
-                            staff: Array.isArray(staff)
-                                ? staff.map(s => s.id || s.uuid || s)
-                                : [],
-                            skills: Array.isArray(skills)
-                                ? skills
-                                : [],
-                            facilitator: Array.isArray(facilitator)
-                                ? facilitator.map(s => s.id || s.uuid || s)
-                                : [],
-                            // Map subjects to subject (array of IDs)
-                            subject: Array.isArray(subjects)
-                                ? subjects.map(s => s.id || s)
-                                : [],
-                            // Map available_languages to languages (array of codes)
-                            languages: Array.isArray(available_languages)
-                                ? available_languages.map(l => l.label || l)
-                                : [],
-                            // Map transcript_languages to transcript_languages (array of codes)
-                            transcript_languages: Array.isArray(transcript_languages)
-                                ? transcript_languages.map(l => l.label || l)
-                                : [],
-                            course_provider_id: data.course_provider_id || '',
-                            min_effort: Number(efforts?.min_effort) || 0,
-                            max_effort: Number(efforts?.max_effort) || 0,
-                            isCobranding: data.cobranding === 1,
-                            // Parse weeks_to_complete into duration_value and duration_unit
-                            duration_value: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? data.weeks_to_complete.split(' ')[0] : data.weeks_to_complete.toString()) : '',
-                            duration_unit: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? (data.weeks_to_complete.split(' ')[1] || 'Weeks') : 'Weeks') : 'Weeks',
-                        };
-                        // Ensure short_description starts with prefix in a single paragraph
-                        const prefix = getPrefix(ownerObj?.name);
-                        const normalizeShortDescription = (rawHtml) => {
-                            const prefix = getPrefix(ownerObj?.name);
-                            const temp = document.createElement('div');
-                            temp.innerHTML = rawHtml || '';
+        if ((mode === "edit" || mode === "view") && id && filters) {
+            setLoading(true);
+            api.get(`/courses/${id}`).then(res => {
+                const { owner, subjects, transcript_languages, available_languages, staff, facilitator, staff_uuids, skills, efforts, ...data } = res.data.data || {};
+                const ownerObj = owner ? filters?.owners.find(o => o.name === owner.name) : null;
+                const providerObj = data.course_provider_id ? filters?.course_providers?.find(p => p.id === data.course_provider_id) : null;
+                setOwnerInput(ownerObj ? ownerObj.name : '');
+                setProviderInput(providerObj ? providerObj.name : '');
+                const safeData = Object.fromEntries(
+                    Object.entries(data).filter(([key]) => key in getInitialValues(page))
+                );
+                // Transform API response to match form structure
+                const transformed = {
+                    ...getInitialValues(page),
+                    ...safeData,
+                    outcome: data.outcome || '',
+                    enrollment_count: data.enrollment_count,
+                    price: data.price,
+                    self_cost: data.self_cost,
+                    self_caption: data.self_caption,
+                    interactive_cost: data.interactive_cost,
+                    interactive_caption: data.interactive_caption,
+                    payment_type_self: data.payment_type_self,
+                    payment_type_interactive: data.payment_type_interactive,
 
-                            let html = (temp.innerHTML || '').trim();
+                    card_short: data.card_short,
+                    admission_steps: data.admission_steps,
+                    admission_steps_desc: data.admission_steps_desc,
+                    course_snapshot: data.course_snapshot,
+                    key_highlights: data.key_highlights,
+                    fee_highlights: data.fee_highlights,
+                    degree_detail_short_desc: data.degree_detail_short_desc,
+                    cert_and_cred_pathways: data.cert_and_cred_pathways,
+                    register_link: data.register_link,
+                    provider: providerObj,
+                    // Map owners to owner object
+                    owner: ownerObj,
+                    // Map staff to staff (array of UUIDs or IDs)
+                    staff: Array.isArray(staff)
+                        ? staff.map(s => s.id || s.uuid || s)
+                        : [],
+                    skills: Array.isArray(skills)
+                        ? skills
+                        : [],
+                    facilitator: Array.isArray(facilitator)
+                        ? facilitator.map(s => s.id || s.uuid || s)
+                        : [],
+                    // Map subjects to subject (array of IDs)
+                    subject: Array.isArray(subjects)
+                        ? subjects.map(s => s.id || s)
+                        : [],
+                    // Map available_languages to languages (array of codes)
+                    languages: Array.isArray(available_languages)
+                        ? available_languages.map(l => l.code || l)
+                        : [],
+                    // Map transcript_languages to transcript_languages (array of codes)
+                    transcript_languages: Array.isArray(transcript_languages)
+                        ? transcript_languages.map(l => l.code || l)
+                        : [],
+                    course_provider_id: data.course_provider_id || '',
+                    min_effort: Number(efforts?.min_effort) || 0,
+                    max_effort: Number(efforts?.max_effort) || 0,
+                    isCobranding: data.cobranding === 1,
+                    disclaimer: data.disclaimer === 1,
+                    // Parse weeks_to_complete into duration_value and duration_unit
+                    duration_value: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? data.weeks_to_complete.split(' ')[0] : data.weeks_to_complete.toString()) : '',
+                    duration_unit: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? (data.weeks_to_complete.split(' ')[1] || 'Weeks') : 'Weeks') : 'Weeks',
+                };
+                const normalizeShortDescription = (rawHtml) => {
+                    const prefix = getPrefix(ownerObj?.name);
+                    const temp = document.createElement('div');
+                    temp.innerHTML = rawHtml || '';
 
-                            // Strip previous prefix if it exists (in HTML or plain)
-                            const regex = new RegExp(`^<p>\\s*${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`, 'i');
-                            html = html.replace(regex, '');
-                            html = html.replace(prefix, ''); // backup plain-text removal just in case
+                    let html = (temp.innerHTML || '').trim();
 
-                            // Clean up extra tags or whitespace
-                            html = html.trim();
+                    const regex = new RegExp(`^<p>\\s*${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`, 'i');
+                    html = html.replace(regex, '');
+                    html = html.replace(prefix, '');
 
-                            // Reconstruct a single paragraph, keeping original formatting
-                            return `<p>${prefix}${html}</p>`;
-                        };
+                    html = html.trim();
+
+                    return `<p>${prefix}${html}</p>`;
+                };
 
 
-                        transformed.short_description = normalizeShortDescription(data.short_description);
-                        setInitial(transformed);
-                        // Set image preview if image_url exists
-                        if (data.image_url) {
-                            setImagePreview(data.image_url);
-                        }
-                        if (data.org_logo) {
-                            setOwnerLogoPreview(data.org_logo);
-                        }
-                        if (data.provider_logo) {
-                            setProviderLogoPreview(data.provider_logo);
-                        }
-                        setLoading(false);
-                    });
-                } else {
-                    setInitial({ ...getInitialValues(page) });
-                    setLoading(false);
+                transformed.short_description = normalizeShortDescription(data.short_description);
+                setInitial(transformed);
+                // Set image preview if image_url exists
+                if (data.image_url) {
+                    setImagePreview(data.image_url);
                 }
-            }, [filters, mode, id, page]);
+                if (data.degree_pdf_path) {
+                    setPdfPreview(data.degree_pdf_path);
+                }
+                if (owner?.certificate_logo_image_url) {
+                    setOwnerLogoPreview(owner.certificate_logo_image_url);
+                }
+                if (data.provider_logo) {
+                    setProviderLogoPreview(data.provider_logo);
+                }
+                setLoading(false);
+            });
+        } else {
+            setInitial({ ...getInitialValues(page) });
+            setLoading(false);
+        }
+    }, [filters, mode, id, page]);
 
     // Filtering logic for each dropdown
     useEffect(() => {
@@ -190,10 +207,10 @@ const CourseForm = ({ mode = "add", page }) => {
             );
             setFilteredOwners(
                 ownerInput?.length < 1
-                    ? []
+                    ? filters.owners // binarySearchAllSubstring(filters.owners, ownerInput, x => (x.name || ""))
                     : binarySearchAllSubstring(filters.owners, ownerInput, x => (x.name || ""))
             );
-            console.log('Filtered owners:', filteredOwners);
+            //console.log('Filtered owners:', filteredOwners);
             setFilteredLanguages(
                 languageInput.length < 1
                     ? []
@@ -279,16 +296,16 @@ const CourseForm = ({ mode = "add", page }) => {
                     appendArray('subjects', values.subject);
                     appendArray('staff', values.staff?.map(Number));
                     if (Array.isArray(values.facilitator) && values.facilitator.length > 0) {
-                        appendArray('facilitator', values.facilitator.map(f => 
+                        appendArray('facilitator', values.facilitator.map(f =>
                             typeof f === 'object' ? f.id || f.value : Number(f)
                         ));
-                        } else {
+                    } else {
                         formData.append('facilitator', ''); // or `null` — depends on backend
                     }
                     if (Array.isArray(values.languages) && values.languages.length > 0) {
                         const langs = Array.isArray(values.languages)
-                        ? values.languages.map(l => languagesData[l] || l)
-                        : [];
+                            ? values.languages.map(l => languagesData[l] || l)
+                            : [];
                         // console.log("🧩 Raw languages before mapping:", values.languages);
                         // console.log("🧠 languagesData sample:", Object.entries(languagesData).slice(0, 5)); // just to confirm structure
                         // console.log("🧠 languagesData check:", languagesData ? Object.keys(languagesData).length : "undefined");
@@ -298,44 +315,131 @@ const CourseForm = ({ mode = "add", page }) => {
                     } else {
                         formData.append('available_languages[]', '');
                     }
-                    appendArray('transcript_languages', values.transcript_languages);
+
+                    if (Array.isArray(values.transcript_languages) && values.transcript_languages.length > 0) {
+                        const langs = Array.isArray(values.transcript_languages)
+                            ? values.transcript_languages.map(l => languagesData[l] || l)
+                            : [];
+                        // console.log("🧩 Raw languages before mapping:", values.languages);
+                        // console.log("🧠 languagesData sample:", Object.entries(languagesData).slice(0, 5)); // just to confirm structure
+                        // console.log("🧠 languagesData check:", languagesData ? Object.keys(languagesData).length : "undefined");
+                        // console.log("✅ Mapped langs (to be sent):", langs);
+                        // Append full names
+                        appendArray('transcript_languages', langs);
+                    } else {
+                        formData.append('transcript_languages[]', '');
+                    }
 
                     // Append single fields
                     if (values.owner) formData.append('owners[0]', values.owner.id);
                     if (values.image_url) formData.append('image_url', values.image_url);
+                    if (values.degree_pdf_path) formData.append('degree_pdf_path', values.degree_pdf_path);
+
                     if (values.enrollment_count !== null && values.enrollment_count !== undefined) {
                         formData.append('enrollment_count', values.enrollment_count)
-                    }else{
+                    } else {
                         formData.append('enrollment_count', null);
                     }
+
                     if (values.price !== null && values.price !== undefined) {
                         formData.append('price', values.price)
-                    }else{
-                        formData.append('price', null);
+                    } else {
+                        formData.append('price', "");
+                    }
+
+                    if (values.self_cost !== null && values.self_cost !== undefined) {
+                        formData.append('self_cost', values.self_cost)
+                    } else {
+                        formData.append('self_cost', "");
+                    }
+                    if (values.self_caption !== null && values.self_caption !== undefined) {
+                        formData.append('self_caption', values.self_caption)
+                    } else {
+                        formData.append('self_caption', "");
+                    }
+                    if (values.interactive_cost !== null && values.interactive_cost !== undefined) {
+                        formData.append('interactive_cost', values.interactive_cost)
+                    } else {
+                        formData.append('interactive_cost', "");
+                    }
+                    if (values.interactive_caption !== null && values.interactive_caption !== undefined) {
+                        formData.append('interactive_caption', values.interactive_caption)
+                    } else {
+                        formData.append('interactive_caption', "");
+                    }
+
+                    if (values.card_short !== null && values.card_short !== undefined) {
+                        formData.append('card_short', values.card_short)
+                    } else {
+                        formData.append('card_short', "");
+                    }
+
+                    if (values.admission_steps !== null && values.admission_steps !== undefined) {
+                        formData.append('admission_steps', values.admission_steps)
+                    } else {
+                        formData.append('admission_steps', "");
+                    }
+
+                    if (values.admission_steps_desc !== null && values.admission_steps_desc !== undefined) {
+                        formData.append('admission_steps_desc', values.admission_steps_desc)
+                    } else {
+                        formData.append('admission_steps_desc', "");
+                    }
+
+                    if (values.course_snapshot !== null && values.course_snapshot !== undefined) {
+                        formData.append('course_snapshot', values.course_snapshot)
+                    } else {
+                        formData.append('course_snapshot', "");
+                    }
+
+                    if (values.key_highlights !== null && values.key_highlights !== undefined) {
+                        formData.append('key_highlights', values.key_highlights)
+                    } else {
+                        formData.append('key_highlights', "");
+                    }
+
+                    if (values.fee_highlights !== null && values.fee_highlights !== undefined) {
+                        formData.append('fee_highlights', values.fee_highlights)
+                    } else {
+                        formData.append('fee_highlights', "");
+                    }
+
+                    if (values.cert_and_cred_pathways !== null && values.cert_and_cred_pathways !== undefined) {
+                        formData.append('cert_and_cred_pathways', values.cert_and_cred_pathways)
+                    } else {
+                        formData.append('cert_and_cred_pathways', "");
+                    }
+
+                    if (values.degree_detail_short_desc !== null && values.degree_detail_short_desc !== undefined) {
+                        formData.append('degree_detail_short_desc', values.degree_detail_short_desc)
+                    } else {
+                        formData.append('degree_detail_short_desc', "");
                     }
 
                     if (values.register_link !== null && values.register_link !== undefined) {
                         formData.append('register_link', values.register_link)
-                    }else{
+                    } else {
                         formData.append('register_link', null);
                     }
-                    
+
                     if (values.provider) formData.append('course_provider_id', values.provider.id);
                     if (values.duration_value && values.duration_unit) {
                         formData.append('weeks_to_complete', `${values.duration_value} ${values.duration_unit}`);
                     }
 
                     formData.append('cobranding', values.isCobranding ? 1 : 0);
+                    console.log("disclaimer value before submit:", values.disclaimer, typeof values.disclaimer);
+                    formData.set('disclaimer', values.disclaimer ? 1 : 0);
                     formData.append('breakdown_description', values.breakdown_description);
 
                     if (values?.order || values?.order !== null) {
                         formData.append('order', values.order);
-                    }else{
+                    } else {
                         formData.append('order', 0);
                     }
                     // Append all other fields that are not handled above
                     const skipFields = [
-                        'subject', 'order', 'owner', 'image_url', 'staff', 'facilitator', 'enrollment_count', 'price', 'register_link', 'weeks_to_complete', 'languages', 'course_provider_id', 'efforts', 'transcript_languages', 'breakdown_description'
+                        'subject', 'order', 'owner', 'image_url', 'degree_pdf_path', 'staff', 'facilitator', 'enrollment_count', 'price', 'card_short', 'cert_and_cred_pathways', 'fee_highlights', 'key_highlights', 'course_snapshot', 'admission_steps', 'admission_steps_desc', 'degree_detail_short_desc', 'register_link', 'weeks_to_complete', 'languages', 'course_provider_id', 'efforts', 'transcript_languages', 'breakdown_description', 'self_cost', 'self_caption', 'interactive_cost', 'interactive_caption'
                     ];
                     Object.entries(values).forEach(([key, value]) => {
                         if (skipFields.includes(key)) return;
@@ -350,6 +454,27 @@ const CourseForm = ({ mode = "add", page }) => {
                         }
                     });
                     try {
+                        console.log("🔥 FORM SUBMISSION STARTED 🔥");
+                        // const fd = new FormData();
+                        // for (let [key, value] of Object.entries(values)) {
+                        //     console.log("➡️ Formik Value:", key, value);
+
+                        //     if (value instanceof File) {
+                        //         console.log(`📄 File Detected (${key}):`, {
+                        //             name: value.name,
+                        //             size: value.size,
+                        //             type: value.type
+                        //         });
+                        //         fd.append(key, value);
+                        //     } else {
+                        //         fd.append(key, value);
+                        //     }
+                        // }
+
+                        console.log("📦 REAL FORMDATA CONTENTS:");
+                        for (let pair of formData.entries()) {
+                            console.log(" →", pair[0], pair[1]);
+                        }
                         const url = mode === "add" ? "/courses" : `/courses/${id}`;
                         const res = await api.post(url, formData);
                         // Debug: log the response for verification
@@ -367,7 +492,7 @@ const CourseForm = ({ mode = "add", page }) => {
                 }}
             >
                 {({ values, setFieldValue, isSubmitting, errors, touched }) => {
-                    console.log('errors :>> ', errors);
+                    // console.log('errors :>> ', errors);
                     React.useEffect(() => {
                         if (!values.isCobranding) {
                             setFieldValue('owner', '');
@@ -441,7 +566,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                                     setFieldValue("owner", val);
                                                     setOwnerInput(val?.name || "");
                                                     if (val && !values.short_description) {
-                                                    setFieldValue("short_description", `This course is offered by ${val.name}, an edX partner.`);
+                                                        setFieldValue("short_description", `This course is offered by ${val.name}, an edX partner.`);
                                                     }
                                                 }}
                                                 options={filteredOwners.map(o => ({ value: o, label: o.name }))}
@@ -490,8 +615,8 @@ const CourseForm = ({ mode = "add", page }) => {
                                         label="Subjects"
                                         value={values.subject || []}
                                         onChange={(val) => {
-                                        setFieldValue("subject", val);
-                                        setSubjectInput("");
+                                            setFieldValue("subject", val);
+                                            setSubjectInput("");
                                         }}
                                         options={filteredSubjects.map((s) => ({ value: s.id, label: s.title }))}
                                         allOptions={filters.subjects.map((s) => ({ value: s.id, label: s.title }))}
@@ -499,27 +624,27 @@ const CourseForm = ({ mode = "add", page }) => {
                                         helperText={touched.subject && errors.subject}
                                         inputValue={subjectInput}
                                         onInputChange={(e, val, reason) => {
-                                        if (reason === "input") {
-                                            if (val.includes(",")) {
-                                            const parts = val.split(",");
-                                            const subjectToAdd = parts[0].trim();
-                                            if (subjectToAdd) {
-                                                const currentSubjects = values.subject || [];
-                                                const alreadyExists = currentSubjects.some(
-                                                (subj) =>
-                                                    subj?.toString().toLowerCase() ===
-                                                    subjectToAdd.toLowerCase()
-                                                );
-                                                if (!alreadyExists) {
-                                                setFieldValue("subject", [...currentSubjects, subjectToAdd]);
+                                            if (reason === "input") {
+                                                if (val.includes(",")) {
+                                                    const parts = val.split(",");
+                                                    const subjectToAdd = parts[0].trim();
+                                                    if (subjectToAdd) {
+                                                        const currentSubjects = values.subject || [];
+                                                        const alreadyExists = currentSubjects.some(
+                                                            (subj) =>
+                                                                subj?.toString().toLowerCase() ===
+                                                                subjectToAdd.toLowerCase()
+                                                        );
+                                                        if (!alreadyExists) {
+                                                            setFieldValue("subject", [...currentSubjects, subjectToAdd]);
+                                                        }
+                                                    }
+                                                    const remaining = parts.slice(1).join(",").trim();
+                                                    setSubjectInput(remaining);
+                                                } else {
+                                                    setSubjectInput(val);
                                                 }
                                             }
-                                            const remaining = parts.slice(1).join(",").trim();
-                                            setSubjectInput(remaining);
-                                            } else {
-                                            setSubjectInput(val);
-                                            }
-                                        }
                                         }}
                                         multiple={true}
                                         disabled={mode === "view"}
@@ -528,48 +653,48 @@ const CourseForm = ({ mode = "add", page }) => {
                                         onClearInput={() => setSubjectInput("")}
                                     />
                                 </Grid>
-                                    <>
-                                        <Grid item xs={12} md={12}>
-                                            <CommonAutocomplete
-                                                name="staff"
-                                                label="Instructors"
-                                                required
-                                                value={values.staff || []}
-                                                onChange={val => {
-                                                    setFieldValue("staff", val);
-                                                    setStaffInput('');
-                                                }}
-                                                options={
+                                <>
+                                    <Grid item xs={12} md={12}>
+                                        <CommonAutocomplete
+                                            name="staff"
+                                            label="Instructors"
+                                            required
+                                            value={values.staff || []}
+                                            onChange={val => {
+                                                setFieldValue("staff", val);
+                                                setStaffInput('');
+                                            }}
+                                            options={
                                                 staffInput.length > 0
                                                     ? binarySearchAllSubstring(filters.staff, staffInput, x => `${x.given_name} ${x.family_name}`)
                                                         .map(s => ({ value: s.id, label: `${s.given_name} ${s.family_name}` }))
                                                     : []
-                                                }
-                                                allOptions={filters.staff.map(s => ({ value: s.id, label: s.given_name + ' ' + s.family_name }))}
-                                                error={touched.staff && Boolean(errors.staff)}
-                                                helperText={touched.staff && errors.staff}
-                                                inputValue={staffInput}
-                                                onInputChange={(e, val, reason) => {
-                                                    if (reason === 'input') setStaffInput(val);
-                                                }}
-                                                multiple={true}
-                                                disabled={mode === 'view'}
-                                                externalFilter={true}
-                                                onClearInput={() => setStaffInput('')}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} md={12}>
-                                            <CommonAutocomplete
-                                                name="facilitator"
-                                                label="Facilitators"
-                                                required
-                                                value={values.facilitator || []}
-                                                onChange={val => {
-                                                    setFieldValue("facilitator", val);
-                                                    setFacilitatorInput('');
-                                                }}
-                                                options={
-                                                    facilitatorInput?.length > 0 && Array.isArray(filters?.facilitator)
+                                            }
+                                            allOptions={filters.staff.map(s => ({ value: s.id, label: s.given_name + ' ' + s.family_name }))}
+                                            error={touched.staff && Boolean(errors.staff)}
+                                            helperText={touched.staff && errors.staff}
+                                            inputValue={staffInput}
+                                            onInputChange={(e, val, reason) => {
+                                                if (reason === 'input') setStaffInput(val);
+                                            }}
+                                            multiple={true}
+                                            disabled={mode === 'view'}
+                                            externalFilter={true}
+                                            onClearInput={() => setStaffInput('')}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} md={12}>
+                                        <CommonAutocomplete
+                                            name="facilitator"
+                                            label="Facilitators"
+                                            required
+                                            value={values.facilitator || []}
+                                            onChange={val => {
+                                                setFieldValue("facilitator", val);
+                                                setFacilitatorInput('');
+                                            }}
+                                            options={
+                                                facilitatorInput?.length > 0 && Array.isArray(filters?.facilitator)
                                                     ? binarySearchAllSubstring(
                                                         filters.facilitator || [],
                                                         facilitatorInput,
@@ -579,64 +704,64 @@ const CourseForm = ({ mode = "add", page }) => {
                                                         label: `${s.first_name} ${s.last_name}`
                                                     }))
                                                     : []
-                                                }
-                                                allOptions={filters.facilitator?.map(s => ({
-                                                    value: s.id,
-                                                    label: `${s.first_name} ${s.last_name}`
-                                                }))}
-                                                error={touched.facilitator && Boolean(errors.facilitator)}
-                                                helperText={touched.facilitator && errors.facilitator}
-                                                inputValue={facilitatorInput}
-                                                onInputChange={(e, val, reason) => {
+                                            }
+                                            allOptions={filters.facilitator?.map(s => ({
+                                                value: s.id,
+                                                label: `${s.first_name} ${s.last_name}`
+                                            }))}
+                                            error={touched.facilitator && Boolean(errors.facilitator)}
+                                            helperText={touched.facilitator && errors.facilitator}
+                                            inputValue={facilitatorInput}
+                                            onInputChange={(e, val, reason) => {
                                                 if (reason === 'input') setFacilitatorInput(val);
-                                                }}
-                                                multiple={true}
-                                                disabled={mode === 'view'}
-                                                externalFilter={true}
-                                                onClearInput={() => setFacilitatorInput('')}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} md={12}>
-                                            <CommonAutocomplete
-                                                name="skills"
-                                                label="Skills"
-                                                required
-                                                value={values.skills || []}
-                                                onChange={val => {
-                                                    setFieldValue("skills", val);
-                                                    setSkillsInput('');
-                                                }}
-                                                options={filteredSkills.map(s => ({ value: s, label: s }))}
-                                                allOptions={filters.skills.map(s => ({ value: s, label: s }))}
-                                                error={touched.skills && Boolean(errors.skills)}
-                                                helperText={touched.skills && errors.skills}
-                                                inputValue={skillsInput}
-                                                onInputChange={(e, val, reason) => {
-                                                    if (reason === 'input') {
-                                                        if (val.includes(',')) {
-                                                            const parts = val.split(',');
-                                                            const skillToAdd = parts[0].trim();
-                                                            if (skillToAdd) {
-                                                                const currentSkills = values.skills || [];
-                                                                if (!currentSkills.includes(skillToAdd)) {
-                                                                    setFieldValue("skills", [...currentSkills, skillToAdd]);
-                                                                }
+                                            }}
+                                            multiple={true}
+                                            disabled={mode === 'view'}
+                                            externalFilter={true}
+                                            onClearInput={() => setFacilitatorInput('')}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} md={12}>
+                                        <CommonAutocomplete
+                                            name="skills"
+                                            label="Skills"
+                                            required
+                                            value={values.skills || []}
+                                            onChange={val => {
+                                                setFieldValue("skills", val);
+                                                setSkillsInput('');
+                                            }}
+                                            options={filteredSkills.map(s => ({ value: s, label: s }))}
+                                            allOptions={filters.skills.map(s => ({ value: s, label: s }))}
+                                            error={touched.skills && Boolean(errors.skills)}
+                                            helperText={touched.skills && errors.skills}
+                                            inputValue={skillsInput}
+                                            onInputChange={(e, val, reason) => {
+                                                if (reason === 'input') {
+                                                    if (val.includes(',')) {
+                                                        const parts = val.split(',');
+                                                        const skillToAdd = parts[0].trim();
+                                                        if (skillToAdd) {
+                                                            const currentSkills = values.skills || [];
+                                                            if (!currentSkills.includes(skillToAdd)) {
+                                                                setFieldValue("skills", [...currentSkills, skillToAdd]);
                                                             }
-                                                            const remaining = parts.slice(1).join(',').trim();
-                                                            setSkillsInput(remaining);
-                                                        } else {
-                                                            setSkillsInput(val);
                                                         }
+                                                        const remaining = parts.slice(1).join(',').trim();
+                                                        setSkillsInput(remaining);
+                                                    } else {
+                                                        setSkillsInput(val);
                                                     }
-                                                }}
-                                                multiple={true}
-                                                disabled={mode === 'view'}
-                                                allowAdd={true}
-                                                externalFilter={true}
-                                                onClearInput={() => setSkillsInput('')}
-                                            />
-                                        </Grid>
-                                    </>
+                                                }
+                                            }}
+                                            multiple={true}
+                                            disabled={mode === 'view'}
+                                            allowAdd={true}
+                                            externalFilter={true}
+                                            onClearInput={() => setSkillsInput('')}
+                                        />
+                                    </Grid>
+                                </>
                                 <Grid item xs={12} md={6} sx={{ color: 'text.primary' }}>
                                     <CommonAutocomplete
                                         name="languages"
@@ -650,38 +775,38 @@ const CourseForm = ({ mode = "add", page }) => {
                                             setFieldValue("languages", langValues);
                                         }}
                                         options={filteredLanguages.map(l => ({
-                                        value: l.code,
-                                        label: l.label
+                                            value: l.code,
+                                            label: l.label
                                         }))}
                                         allOptions={Object.entries(languagesData).map(([code, name]) => ({
-                                        value: code,
-                                        label: name
+                                            value: code,
+                                            label: name
                                         }))}
                                         error={touched.languages && Boolean(errors.languages)}
                                         helperText={touched.languages && errors.languages}
                                         inputValue={languageInput}
                                         onInputChange={(e, val, reason) => {
-                                        if (reason === 'input') {
-                                            // Split by commas while typing
-                                            if (val.includes(',')) {
-                                            const parts = val
-                                                .split(',')
-                                                .map(v => v.trim())
-                                                .filter(Boolean);
+                                            if (reason === 'input') {
+                                                // Split by commas while typing
+                                                if (val.includes(',')) {
+                                                    const parts = val
+                                                        .split(',')
+                                                        .map(v => v.trim())
+                                                        .filter(Boolean);
 
-                                            if (parts.length > 0) {
-                                                const uniqueLangs = Array.from(
-                                                new Set([...(values.languages || []), ...parts])
-                                                );
-                                                setFieldValue("languages", uniqueLangs);
-                                            }
+                                                    if (parts.length > 0) {
+                                                        const uniqueLangs = Array.from(
+                                                            new Set([...(values.languages || []), ...parts])
+                                                        );
+                                                        setFieldValue("languages", uniqueLangs);
+                                                    }
 
-                                            // Clear input after adding
-                                            setLanguageInput('');
-                                            } else {
-                                            setLanguageInput(val);
+                                                    // Clear input after adding
+                                                    setLanguageInput('');
+                                                } else {
+                                                    setLanguageInput(val);
+                                                }
                                             }
-                                        }
                                         }}
                                         multiple={true}
                                         disabled={mode === 'view'}
@@ -696,7 +821,10 @@ const CourseForm = ({ mode = "add", page }) => {
                                         required
                                         value={values.transcript_languages}
                                         onChange={val => {
-                                            setFieldValue("transcript_languages", val);
+                                            const langValues = Array.isArray(val)
+                                                ? val.map(v => (typeof v === 'object' ? v.label : v))
+                                                : [];
+                                            setFieldValue("transcript_languages", langValues);
                                             setTranscriptLanguageInput('');
                                         }}
                                         options={filteredTranscriptLanguages.map(l => ({ value: l.code, label: l.label }))}
@@ -706,7 +834,26 @@ const CourseForm = ({ mode = "add", page }) => {
                                         multiple={true}
                                         inputValue={transcriptLanguageInput}
                                         onInputChange={(e, val, reason) => {
-                                            if (reason === 'input') setTranscriptLanguageInput(val);
+                                            if (reason === 'input') {
+                                                if (val.includes(',')) {
+                                                    const parts = val
+                                                        .split(',')
+                                                        .map(v => v.trim())
+                                                        .filter(Boolean);
+
+                                                    if (parts.length > 0) {
+                                                        const uniqueLangs = Array.from(
+                                                            new Set([...(values.transcript_languages || []), ...parts])
+                                                        );
+                                                        setFieldValue("transcript_languages", uniqueLangs);
+                                                    }
+
+                                                    // Clear input after adding
+                                                    setTranscriptLanguageInput('');
+                                                } else {
+                                                    setTranscriptLanguageInput(val);
+                                                }
+                                            }
                                         }}
                                         disabled={mode === 'view'}
                                         allowAdd={true}
@@ -777,21 +924,21 @@ const CourseForm = ({ mode = "add", page }) => {
                                     />
                                 </Grid>
                                 <Grid item xs={12} md={4}>
-                                        <CommonTextField
-                                            name="start_date"
-                                            label="Start Date"
-                                            type="date"
-                                            required
-                                            InputLabelProps={{ shrink: true }}
-                                            onChange={e => setFieldValue("start_date", e.target.value)}
-                                            error={touched.start_date && Boolean(errors.start_date)}
-                                            helperText={touched.start_date && errors.start_date}
-                                            value={values.start_date}
-                                            defaultValue={values.start_date}
-                                            disabled={mode === 'view'}
-                                        />
-                                    </Grid>
-                                    {/* <Grid item xs={12} md={4}>
+                                    <CommonTextField
+                                        name="start_date"
+                                        label="Start Date"
+                                        type="date"
+                                        required
+                                        InputLabelProps={{ shrink: true }}
+                                        onChange={e => setFieldValue("start_date", e.target.value)}
+                                        error={touched.start_date && Boolean(errors.start_date)}
+                                        helperText={touched.start_date && errors.start_date}
+                                        value={values.start_date}
+                                        defaultValue={values.start_date}
+                                        disabled={mode === 'view'}
+                                    />
+                                </Grid>
+                                {/* <Grid item xs={12} md={4}>
                                         <CommonTextField
                                             name="end_date"
                                             label="End Date" type="date"
@@ -985,6 +1132,146 @@ const CourseForm = ({ mode = "add", page }) => {
                                         </Box>
                                     )}
                                 </Grid>
+                                <Grid item xs={12} md={12}>
+                                    {mode === 'view' ? (
+                                        pdfPreview && (
+                                            <Box sx={{ textAlign: 'center', py: 2 }}>
+                                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                                    Degree PDF Preview
+                                                </Typography>
+
+                                                <Button
+                                                    variant="outlined"
+                                                    color="primary"
+                                                    component="a"
+                                                    href={pdfPreview}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    View PDF
+                                                </Button>
+                                            </Box>
+                                        )
+                                    ) : (
+                                        <Box
+                                            sx={{
+                                                border: '2px dashed #3322FF',
+                                                borderRadius: 2,
+                                                p: 3,
+                                                textAlign: 'center',
+                                                position: 'relative',
+                                                background: '#eceaff',
+                                                transition: 'border-color 0.2s, background 0.2s',
+                                                '&:hover': { borderColor: '#3322FF', background: '#d0ccff' },
+                                                cursor: mode === 'view' ? 'not-allowed' : 'pointer',
+                                                minHeight: 180,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            }}
+                                            onClick={() => {
+                                                if (mode !== 'view') document.getElementById('degree-pdf-input').click();
+                                            }}
+                                            onDrop={e => {
+                                                e.preventDefault();
+                                                if (mode === 'view') return;
+
+                                                const file = e.dataTransfer.files[0];
+                                                if (file && file.type === 'application/pdf') {
+                                                    setFieldValue("degree_pdf_path", file);
+                                                    const reader = new FileReader();
+                                                    reader.onload = ev => setPdfPreview(ev.target.result);
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }}
+                                            onDragOver={e => e.preventDefault()}
+                                        >
+                                            {/* Hidden Input */}
+                                            <input
+                                                id="degree-pdf-input"
+                                                type="file"
+                                                hidden
+                                                accept="application/pdf"
+                                                onChange={e => {
+                                                    const file = e.currentTarget.files[0];
+                                                    if (file) {
+                                                        setFieldValue("degree_pdf_path", file);
+
+                                                        const reader = new FileReader();
+                                                        reader.onload = ev => setPdfPreview(ev.target.result);
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }}
+                                                disabled={mode === 'view'}
+                                            />
+
+                                            {/* No PDF Yet */}
+                                            {!pdfPreview ? (
+                                                <>
+                                                    <Typography variant="body1" sx={{ color: '#222', mb: 1 }}>
+                                                        <b>Drag & drop</b> a PDF here, or{" "}
+                                                        <span style={{ color: '#222', textDecoration: 'underline' }}>
+                                                            click to select
+                                                        </span>
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: '#757575' }}>
+                                                        (PDF only, max 20MB)
+                                                    </Typography>
+                                                </>
+                                            ) : (
+                                                /* PDF Uploaded */
+                                                <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                                                    <Typography variant="body1" sx={{ mb: 1 }}>
+                                                        PDF Uploaded: {values.degree_pdf_path?.name || 'Degree PDF'}
+                                                    </Typography>
+
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="primary"
+                                                        component="a"
+                                                        href={pdfPreview}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        sx={{ mr: 1 }}
+                                                    >
+                                                        Preview PDF
+                                                    </Button>
+
+                                                    {/* Delete PDF */}
+                                                    {mode !== 'view' && (
+                                                        <Button
+                                                            size="small"
+                                                            color="error"
+                                                            variant="contained"
+                                                            sx={{
+                                                                minWidth: 0,
+                                                                width: 28,
+                                                                height: 28,
+                                                                borderRadius: '50%',
+                                                                p: 0,
+                                                                fontWeight: 'bold',
+                                                                fontSize: 18,
+                                                                lineHeight: 1,
+                                                            }}
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                setFieldValue("degree_pdf_path", null);
+                                                                setPdfPreview(null);
+                                                            }}
+                                                        >
+                                                            ×
+                                                        </Button>
+                                                    )}
+                                                </Box>
+                                            )}
+
+                                            <FormHelperText error={!!(touched.degree_pdf_path && errors.degree_pdf_path)}>
+                                                {touched.degree_pdf_path && errors.degree_pdf_path}
+                                            </FormHelperText>
+                                        </Box>
+                                    )}
+                                </Grid>
                                 {/* <Grid item xs={12} md={6}>
                                     <CommonTextField
                                         name="estimated_hours"
@@ -1008,19 +1295,17 @@ const CourseForm = ({ mode = "add", page }) => {
                                         disabled={mode === 'view'}
                                     />
                                 </Grid> */}
-                                {!isProgram && (
-                                    <Grid item xs={12}>
-                                        <CommonTextEditor
-                                            label="Course Modules"
-                                            value={values.course_modules}
-                                            onChange={val => setFieldValue("course_modules", !val || val === "null" ? "" : val)}
-                                            mode={mode}
-                                            placeholder="Enter course modules..."
-                                            error={touched.course_modules && errors.course_modules}
-                                            helperText={touched.course_modules && errors.course_modules}
-                                        />
-                                    </Grid>
-                                )}
+                                <Grid item xs={12}>
+                                    <CommonTextEditor
+                                        label="Course Modules"
+                                        value={values.course_modules}
+                                        onChange={val => setFieldValue("course_modules", !val || val === "null" ? "" : val)}
+                                        mode={mode}
+                                        placeholder="Enter course modules..."
+                                        error={touched.course_modules && errors.course_modules}
+                                        helperText={touched.course_modules && errors.course_modules}
+                                    />
+                                </Grid>
                                 <Grid item xs={12} md={4}>
                                     <CommonTextField
                                         name="enrollment_count"
@@ -1033,7 +1318,75 @@ const CourseForm = ({ mode = "add", page }) => {
                                         disabled={mode === 'view'}
                                     />
                                 </Grid>
-                                {isProgram && 
+                                <Grid item xs={12} md={6}>
+                                    <CommonTextField
+                                        name="self_cost"
+                                        label="Self Paced Cost"
+                                        type="number"
+                                        value={values.self_cost}
+                                        onChange={e => setFieldValue("self_cost", e.target.value)}
+                                        error={touched.self_cost && Boolean(errors.self_cost)}
+                                        helperText={errors.self_cost}
+                                        disabled={mode === 'view'}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <CommonTextField
+                                        name="self_caption"
+                                        label="Self Caption"
+                                        value={values.self_caption}
+                                        onChange={e => setFieldValue("self_caption", e.target.value)}
+                                        error={touched.self_caption && Boolean(errors.self_caption)}
+                                        helperText={errors.self_caption}
+                                        disabled={mode === 'view'}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <CommonTextField
+                                        name="payment_type_self"
+                                        label="Self Payment Type"
+                                        value={values.payment_type_self}
+                                        onChange={e => setFieldValue("payment_type_self", e.target.value)}
+                                        error={touched.payment_type_self && Boolean(errors.payment_type_self)}
+                                        helperText={errors.payment_type_self}
+                                        disabled={mode === 'view'}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <CommonTextField
+                                        name="interactive_cost"
+                                        label="Interactive Cost"
+                                        type="number"
+                                        value={values.interactive_cost}
+                                        onChange={e => setFieldValue("interactive_cost", e.target.value)}
+                                        error={touched.interactive_cost && Boolean(errors.interactive_cost)}
+                                        helperText={errors.interactive_cost}
+                                        disabled={mode === 'view'}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <CommonTextField
+                                        name="interactive_caption"
+                                        label="Interactive Caption"
+                                        value={values.interactive_caption}
+                                        onChange={e => setFieldValue("interactive_caption", e.target.value)}
+                                        error={touched.interactive_caption && Boolean(errors.interactive_caption)}
+                                        helperText={errors.interactive_caption}
+                                        disabled={mode === 'view'}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <CommonTextField
+                                        name="payment_type_interactive"
+                                        label="Interactive Payment Type"
+                                        value={values.payment_type_interactive}
+                                        onChange={e => setFieldValue("payment_type_interactive", e.target.value)}
+                                        error={touched.payment_type_interactive && Boolean(errors.payment_type_interactive)}
+                                        helperText={errors.payment_type_interactive}
+                                        disabled={mode === 'view'}
+                                    />
+                                </Grid>
+                                {isProgram &&
                                     <Grid item xs={12} md={4}>
                                         <CommonTextField
                                             name="price"
@@ -1046,7 +1399,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                         />
                                     </Grid>
                                 }
-                                {isProgram && 
+                                {isProgram &&
                                     <Grid item xs={12} md={4}>
                                         <CommonTextField
                                             name="register_link"
@@ -1148,6 +1501,128 @@ const CourseForm = ({ mode = "add", page }) => {
                                         </Grid>
                                     </>
                                 )}
+                                {isProgram &&
+                                    <Grid item xs={12}>
+                                        <CommonTextField
+                                            name="card_short"
+                                            label="Card Short Description"
+                                            value={values.card_short}
+                                            onChange={e => setFieldValue("card_short", e.target.value)}
+                                            error={touched.card_short && Boolean(errors.card_short)}
+                                            helperText={errors.card_short}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
+                                {isProgram &&
+                                    <Grid item xs={12}>
+                                        <CommonTextEditor
+                                            name="cert_and_cred_pathways"
+                                            label="Certificate and Credit Pathways (Bold for heading and under bold text, simple text as description)"
+                                            value={values.cert_and_cred_pathways}
+                                            onChange={val => setFieldValue("cert_and_cred_pathways", !val || val === "null" ? "" : val)}
+                                            error={touched.cert_and_cred_pathways && Boolean(errors.cert_and_cred_pathways)}
+                                            helperText={errors.cert_and_cred_pathways}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
+                                {isProgram &&
+                                    <Grid item xs={12}>
+                                        <CommonTextField
+                                            name="degree_detail_short_desc"
+                                            label="Degree Detail Short Description"
+                                            value={values.degree_detail_short_desc}
+                                            onChange={e => setFieldValue("degree_detail_short_desc", e.target.value)}
+                                            error={touched.degree_detail_short_desc && Boolean(errors.degree_detail_short_desc)}
+                                            helperText={errors.degree_detail_short_desc}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
+                                {isProgram &&
+                                    <Grid item xs={12}>
+                                        <CommonTextField
+                                            name="admission_steps_desc"
+                                            label="Admission Steps Short Description"
+                                            value={values.admission_steps_desc}
+                                            onChange={e => setFieldValue("admission_steps_desc", e.target.value)}
+                                            error={touched.admission_steps_desc && Boolean(errors.admission_steps_desc)}
+                                            helperText={errors.admission_steps_desc}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
+                                {isProgram &&
+                                    <Grid item xs={12}>
+                                        <CommonTextEditor
+                                            name="admission_steps"
+                                            label="Admission Steps (Bold for title and under bold text, simple text as description)"
+                                            value={values.admission_steps}
+                                            onChange={val => setFieldValue("admission_steps", !val || val === "null" ? "" : val)}
+                                            error={touched.admission_steps && Boolean(errors.admission_steps)}
+                                            helperText={errors.admission_steps}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
+                                {isProgram &&
+                                    <Grid item xs={12}>
+                                        <CommonTextEditor
+                                            name="course_snapshot"
+                                            label="Course Snapshots(Only bullet points)"
+                                            value={values.course_snapshot}
+                                            onChange={val => setFieldValue("course_snapshot", !val || val === "null" ? "" : val)}
+                                            error={touched.course_snapshot && Boolean(errors.course_snapshot)}
+                                            helperText={errors.course_snapshot}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
+                                {isProgram &&
+                                    <Grid item xs={12}>
+                                        <CommonTextEditor
+                                            name="key_highlights"
+                                            label="Key Highlights of the Program(Only bullet points)"
+                                            value={values.key_highlights}
+                                            onChange={val => setFieldValue("key_highlights", !val || val === "null" ? "" : val)}
+                                            error={touched.key_highlights && Boolean(errors.key_highlights)}
+                                            helperText={errors.key_highlights}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
+                                {isProgram &&
+                                    <Grid item xs={12}>
+                                        <CommonTextEditor
+                                            name="fee_highlights"
+                                            label="Key Highlights(Present next to Degree Breakdown)"
+                                            value={values.fee_highlights}
+                                            onChange={val => setFieldValue("fee_highlights", !val || val === "null" ? "" : val)}
+                                            error={touched.fee_highlights && Boolean(errors.fee_highlights)}
+                                            helperText={errors.fee_highlights}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
+                                {isProgram && providerInput !== "edx" &&
+                                    <Grid item xs={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    name="disclaimer"
+                                                    checked={values.disclaimer}
+                                                    onChange={e => setFieldValue("disclaimer", e.target.checked)}
+                                                    disabled={mode === 'view'}
+                                                />
+                                            }
+                                            label="Disclaimer"
+                                        />
+                                        {touched.disclaimer && Boolean(errors.disclaimer) && (
+                                            <FormHelperText error>{errors.disclaimer}</FormHelperText>
+                                        )}
+                                    </Grid>
+                                }
                                 {/* <Grid item xs={12} md={4}>
                                     <CommonTextField
                                         name="order"
@@ -1176,7 +1651,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                     <Button
                                         variant="outlined"
                                         sx={{ ml: 2 }}
-                                        onClick={() => { pageType === "programs" ? navigate("/programs") : navigate("/courses")}}
+                                        onClick={() => { pageType === "programs" ? navigate("/programs") : navigate("/courses") }}
                                     >
                                         Cancel
                                     </Button>

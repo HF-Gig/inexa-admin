@@ -11,7 +11,7 @@ export const baseInitialValues = {
   outcome: '',
   languages: [],
   provider: "",
-  duration_value: 0, 
+  duration_value: 0,
   duration_unit: "",
   availability: "",
   course_level: "",
@@ -20,14 +20,27 @@ export const baseInitialValues = {
   short_description: "",
   breakdown_description: "",
   image_url: null,
+  degree_pdf_path: null,
   estimated_hours: "",
   transcript_languages: [],
   price: "",
+  self_cost: "",
+  self_caption: "",
+  interactive_cost: "",
+  interactive_caption: "",
+  payment_type_self: "",
+  payment_type_interactive: "",
+  card_short: "",
+  degree_detail_short_desc: "",
+  admission_steps: "",
+  admission_steps_desc: "",
   course_modules: "",
   min_effort: "",
   max_effort: "",
   pacing_type: "",
   order: 0,
+  disclaimer: false,
+  course_snapshot: "",
   isCobranding: true,
 };
 
@@ -76,21 +89,27 @@ export const baseValidation = {
     ),
   estimated_hours: Yup.number().nullable(),
   transcript_languages: Yup.array(), // .min(1, "At least one transcript language is required"),
+  self_cost: Yup.number().nullable(),
+  self_caption: Yup.string().nullable(),
+  interactive_cost: Yup.number().nullable(),
+  interactive_caption: Yup.string().nullable(),
+  payment_type_self: Yup.string().nullable(),
+  payment_type_interactive: Yup.string().nullable(),
   min_effort: Yup.number(), // .required("Min effort is required"),
   max_effort: Yup.number(),
-    // .min(0, "Max effort must be positive")
-    // // .required("Max effort is required")
-    // .test(
-    //   "max-greater-than-min",
-    //   "Max effort must be greater than min effort",
-    //   function (value) {
-    //     const { min_effort } = this.parent;
-    //     if (typeof value === "number" && typeof min_effort === "number") {
-    //       return value > min_effort;
-    //     }
-    //     return true;
-    //   }
-    // ),
+  // .min(0, "Max effort must be positive")
+  // // .required("Max effort is required")
+  // .test(
+  //   "max-greater-than-min",
+  //   "Max effort must be greater than min effort",
+  //   function (value) {
+  //     const { min_effort } = this.parent;
+  //     if (typeof value === "number" && typeof min_effort === "number") {
+  //       return value > min_effort;
+  //     }
+  //     return true;
+  //   }
+  // ),
   pacing_type: Yup.string().nullable(),
   order: Yup.number().nullable(),
 };

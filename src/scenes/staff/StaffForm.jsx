@@ -59,7 +59,7 @@ const StaffForm = ({ mode = "add" }) => {
     useEffect(() => {
         if (!fetchedOrganizations.current) {
             fetchedOrganizations.current = true;
-            api.get("/owners?pagination=false").then(res => {
+            api.get("/organization?pagination=false").then(res => {
                 console.log("Owners fetched: ", res.data.data)
                 setOrganizations(res.data.data || []);
             })
@@ -69,9 +69,9 @@ const StaffForm = ({ mode = "add" }) => {
     useEffect(() => {
         if (organizations) {
             setFilteredOrganizations(
-                orgInput.length < 1
+                orgInput?.length < 1
                     ? []
-                    : binarySearchAllSubstring(organizations, orgInput, x => x.name)
+                    : binarySearchAllSubstring(organizations, orgInput, x => x.organization_name)
             );
         }
     }, [organizations, orgInput]);
@@ -93,7 +93,7 @@ const StaffForm = ({ mode = "add" }) => {
                 setImagePreview(data.profile_image_url || null);
                 // Set orgInput to the organization name for the selected id
                 const org = organizations.find(o => o.id === data.organization_id);
-                setOrgInput(org ? org.name : "");
+                setOrgInput(org ? org.organization_name : "");
                 setLoading(false);
             });
         }
@@ -250,10 +250,10 @@ const StaffForm = ({ mode = "add" }) => {
                                         onChange={val => {
                                             setFieldValue("organization_id", val);
                                             const selected = filteredOrganizations.find(o => o.id === val);
-                                            setOrgInput(selected ? selected.name : "");
+                                            setOrgInput(selected ? selected.organization_name : "");
                                         }}
-                                        options={filteredOrganizations.map(o => ({ value: o.id, label: o.name }))}
-                                        allOptions={organizations.map(o => ({ value: o.id, label: o.name }))}
+                                        options={filteredOrganizations.map(o => ({ value: o.id, label: o.organization_name }))}
+                                        allOptions={organizations.map(o => ({ value: o.id, label: o.organization_name }))}
                                         inputValue={orgInput}
                                         onInputChange={(e, val, reason) => {
                                             if (reason === 'input') { setOrgInput(val) }

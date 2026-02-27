@@ -22,16 +22,9 @@ import {
   // CircularProgress,
   // FormControlLabel,
   Checkbox,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Grid,
 } from "@mui/material";
-import { Edit, Delete, Add, School, Visibility } from "@mui/icons-material";
-import { Formik, Form, Field } from "formik";
+import { Edit, Delete, Add, School, Visibility, Download } from "@mui/icons-material";
 import * as Yup from "yup";
-import { Header } from "../../components";
 import api from "../../helpers/api";
 import CommonTable from "../../components/CommonTable";
 import { useNavigate } from "react-router-dom";
@@ -299,6 +292,36 @@ const Courses = ({ pageType = 'courses' }) => {
     }
   };
 
+  const handleExportCsv = async () => {
+    try {
+      const response = await api.get('/courses/export-csv', {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'courses_export.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      setSnackbar({
+        open: true,
+        message: "Export successful!",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to export courses.",
+        severity: "error",
+      });
+    }
+  };
+
   const getTypeInfo = (typeId) => {
     switch (typeId) {
       case 6:
@@ -310,9 +333,9 @@ const Courses = ({ pageType = 'courses' }) => {
       case 2:
         return { name: "Professional Certificate", bgColor: "#3322FF", textColor: "#FFFFFF" };
       case 3:
-        return { name: "MicroMasters", bgColor: "#6644FF", textColor: "#FFFFFF" };
+        return { name: "MicroMasters®", bgColor: "#6644FF", textColor: "#FFFFFF" };
       case 1:
-        return { name: "MicroBachelors", bgColor: "#D4D4D4", textColor: "#282828" };
+        return { name: "MicroBachelors®", bgColor: "#D4D4D4", textColor: "#282828" };
       default:
         return { name: "Unknown", bgColor: "#282828", textColor: "#FFFFFF" };
     }
@@ -322,31 +345,35 @@ const Courses = ({ pageType = 'courses' }) => {
   const tableColumns = [
     { name: "id", label: "ID", width: 80 },
     { name: "title", label: "Title", width: 200, align: "left" },
-    { name: "type", label: "Type", width: 150, render: (row) => {
-      const typeInfo = getTypeInfo(row.type_id);
-      return (
-        <Box
-          sx={{
-            backgroundColor: typeInfo.bgColor,
-            color: typeInfo.textColor,
-            paddingRight: 4,
-            paddingLeft: 4,
-            paddingTop: 1,
-            paddingBottom: 1,
-            borderRadius: '40px',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            maxWidth: 'fit-content',
-            textAlign: 'center',
-          }}
-        >
-          {typeInfo.name}
-        </Box>
-      );
-    }},
+    {
+      name: "type", label: "Type", width: 150, render: (row) => {
+        const typeInfo = getTypeInfo(row.type_id);
+        return (
+          <Box
+            sx={{
+              backgroundColor: typeInfo.bgColor,
+              color: typeInfo.textColor,
+              paddingRight: 4,
+              paddingLeft: 4,
+              paddingTop: 1,
+              paddingBottom: 1,
+              borderRadius: '40px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              maxWidth: 'fit-content',
+              textAlign: 'center',
+            }}
+          >
+            {typeInfo.name}
+          </Box>
+        );
+      }
+    },
     { name: "start_date", label: "Start Date", width: 120 },
     { name: "owner", label: "University", width: 150 },
-    { name: "weeks_to_complete", label: "Duration", width: 120 },
+    { name: "weeks_to_complete", label: "Duration", width: 80 },
+    { name: "createdAt", label: "Created At", width: "fit-content" },
+    { name: "updatedAt", label: "Updated At", width: "fit-content" },
     { name: "pacing_type", label: "Pacing Type", width: 120 },
     { name: "status", label: "Active", width: 80, render: (row) => <Checkbox checked={row.status === 1} onChange={(e) => handleStatusToggle(row, e.target.checked)} /> },
   ];
@@ -377,23 +404,39 @@ const Courses = ({ pageType = 'courses' }) => {
           <Typography variant="h4" fontWeight={700} color="primary.main">
             {pageType === 'courses' ? 'Courses' : 'Programmes'}
           </Typography>
-          {getCurrentUserRole() !== 'moderator' &&
+          <Box display="flex" gap={2}>
+            {getCurrentUserRole() !== 'moderator' && (
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => navigate(navigatePage + "/add")}
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  px: 2,
+                  py: 1,
+                  boxShadow: "0 2px 8px 0 rgba(25, 118, 210, 0.08)",
+                }}
+              >
+                Add {pageType === "courses" ? "Course" : "Programme"}
+              </Button>
+            )}
             <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => navigate(navigatePage + "/add")}
+              variant="outlined"
+              startIcon={<Download />}
+              onClick={handleExportCsv}
               sx={{
                 borderRadius: 2,
                 fontWeight: 600,
                 fontSize: 14,
                 px: 2,
                 py: 1,
-                boxShadow: "0 2px 8px 0 rgba(25, 118, 210, 0.08)",
               }}
             >
-              Add {pageType === 'courses' ? 'Course' : 'Programme'}
+              Export CSV
             </Button>
-          }
+          </Box>
         </Box>
         <Box mt={1} mb={2}>
           <CommonSearchBar value={search} onChange={setSearch} placeholder={`Search ${pageType === 'courses' ? 'courses' : 'programmes'}...`} sx={{ maxWidth: 350 }} />
@@ -405,7 +448,21 @@ const Courses = ({ pageType = 'courses' }) => {
             ...c,
             start_date: c.start_date ? c.start_date.slice(0, 10) : "",
             owner: c?.owner?.name || "",
-            weeks_to_complete: c.weeks_to_complete ? `${c.weeks_to_complete}` : "",
+            weeks_to_complete: c?.weeks_to_complete ? `${c?.weeks_to_complete}` : "",
+            createdAt: c?.createdAt
+              ? new Date(c?.createdAt).toLocaleDateString("en-US", {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })
+              : "",
+            updatedAt: c?.updatedAt
+              ? new Date(c?.updatedAt).toLocaleDateString("en-US", {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })
+              : "",
           }))}
           total={total}
           page={page}
@@ -445,8 +502,8 @@ const Courses = ({ pageType = 'courses' }) => {
               >
                 <Edit fontSize="small" />
               </IconButton>
-             { getCurrentUserRole() !== 'moderator' && 
-              <IconButton
+              {getCurrentUserRole() !== 'moderator' &&
+                <IconButton
                   onClick={() => handleOpenDeleteDialog(c.uuid)}
                   title="Delete"
                   sx={{

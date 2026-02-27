@@ -12,7 +12,8 @@ import {
   StarOutlined,
   ManageAccountsOutlined,
   ContactMailOutlined,
-  CorporateFareOutlined
+  CorporateFareOutlined,
+  PaidOutlined,
 } from "@mui/icons-material";
 import logo from "../../../assets/images/full-logo.png";
 import Item from "./Item";
@@ -36,7 +37,7 @@ const SideBar = () => {
       return null;
     }
   };
-  
+
   return (
     <Sidebar
       backgroundColor="#282828"
@@ -101,7 +102,7 @@ const SideBar = () => {
             },
           }}
         >
-          {getCurrentUserRole() !== "editor" && getCurrentUserRole() !== "moderator" && 
+          {getCurrentUserRole() !== "editor" && getCurrentUserRole() !== "moderator" &&
             <Item
               title="Learners"
               path="/users"
@@ -109,7 +110,7 @@ const SideBar = () => {
               icon={<PeopleAltOutlined />}
             />
           }
-          {getCurrentUserRole() !== "moderator" && 
+          {getCurrentUserRole() !== "moderator" &&
             <Item
               title="Instructors"
               path="/staff"
@@ -117,7 +118,7 @@ const SideBar = () => {
               icon={<PeopleAltOutlined />}
             />
           }
-          { getCurrentUserRole() !== "moderator" && 
+          {getCurrentUserRole() !== "moderator" &&
             <Item
               title="Universities"
               path="/organization"
@@ -143,7 +144,7 @@ const SideBar = () => {
             colors={colors}
             icon={<CardMembershipOutlined />}
           /> */}
-          {getCurrentUserRole() !== "moderator" && 
+          {getCurrentUserRole() !== "moderator" &&
             <Item
               title="Featured"
               path="/featured"
@@ -151,7 +152,7 @@ const SideBar = () => {
               icon={<StarOutlined />}
             />
           }
-          {getCurrentUserRole() !== "editor" && getCurrentUserRole() !== "moderator" && 
+          {getCurrentUserRole() !== "editor" && getCurrentUserRole() !== "moderator" &&
             <Item
               title="Management"
               path="/management"
@@ -159,7 +160,25 @@ const SideBar = () => {
               icon={<ManageAccountsOutlined />}
             />
           }
-          {getCurrentUserRole() !== "moderator" && 
+          <Item
+            title="Subscriptions"
+            path="/subscriptions"
+            colors={colors}
+            icon={<CardMembershipOutlined />}
+          />
+          <Item
+            title="Payments"
+            path="/payments"
+            colors={colors}
+            icon={<PaidOutlined />}
+          />
+          <Item
+            title="Costs"
+            path="/costs"
+            colors={colors}
+            icon={<PaidOutlined />}
+          />
+          {getCurrentUserRole() !== "moderator" &&
             <Item
               title="Contact Forms"
               path="/contact"
@@ -167,7 +186,7 @@ const SideBar = () => {
               icon={<ContactMailOutlined />}
             />
           }
-          {getCurrentUserRole() !== "moderator" && 
+          {getCurrentUserRole() !== "moderator" &&
             <Item
               title="Inexa Facilitators"
               path="/inexa-staff"
@@ -175,7 +194,7 @@ const SideBar = () => {
               icon={<PeopleAltOutlined />}
             />
           }
-          {getCurrentUserRole() !== "moderator" && 
+          {getCurrentUserRole() !== "moderator" &&
             <Item
               title="Providers"
               path="/providers"
