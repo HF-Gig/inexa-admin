@@ -55,8 +55,8 @@ const CommonTable = ({
   onSortChange,
   actionsWidth, // new prop
 }) => {
-  const handleSort = (colName) => {
-    if (!onSortChange) return;
+  const handleSort = (colName, sortable) => {
+    if (!onSortChange || sortable === false) return;
     let direction = "asc";
     if (sortCol === colName && sortDir === "asc") direction = "desc";
     onSortChange(colName, direction);
@@ -81,27 +81,33 @@ const CommonTable = ({
           <TableHead>
             <TableRow>
               {columns.map((col) => (
-                <TableCell
-                  key={col.name}
-                  align={col.align || "center"}
-                  sx={{
-                    ...HEADER_CELL_STYLE,
-                    ...(col.width ? { width: col.width } : {}),
-                    cursor: onSortChange ? "pointer" : undefined,
-                  }}
-                  onClick={onSortChange ? () => handleSort(col.name) : undefined}
-                >
-                  {onSortChange ? (
-                    <TableSortLabel
-                      active={sortCol === col.name}
-                      direction={sortCol === col.name ? sortDir : "asc"}
+                (() => {
+                  const sortable = col.sortable !== false;
+                  const enableSort = Boolean(onSortChange) && sortable;
+                  return (
+                    <TableCell
+                      key={col.name}
+                      align={col.align || "center"}
+                      sx={{
+                        ...HEADER_CELL_STYLE,
+                        ...(col.width ? { width: col.width } : {}),
+                        cursor: enableSort ? "pointer" : undefined,
+                      }}
+                      onClick={enableSort ? () => handleSort(col.name, sortable) : undefined}
                     >
-                      {col.label}
-                    </TableSortLabel>
-                  ) : (
-                    col.label
-                  )}
-                </TableCell>
+                      {enableSort ? (
+                        <TableSortLabel
+                          active={sortCol === col.name}
+                          direction={sortCol === col.name ? sortDir : "asc"}
+                        >
+                          {col.label}
+                        </TableSortLabel>
+                      ) : (
+                        col.label
+                      )}
+                    </TableCell>
+                  );
+                })()
               ))}
               {actions && (
                 <TableCell

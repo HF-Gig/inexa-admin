@@ -14,6 +14,7 @@ import {
   ContactMailOutlined,
   CorporateFareOutlined,
   PaidOutlined,
+  TimelineOutlined,
 } from "@mui/icons-material";
 import logo from "../../../assets/images/full-logo.png";
 import Item from "./Item";
@@ -102,6 +103,14 @@ const SideBar = () => {
             },
           }}
         >
+          {getCurrentUserRole() !== "editor" && getCurrentUserRole() !== "moderator" && (
+            <Item
+              title="Home Page"
+              path="/home-page"
+              colors={colors}
+              icon={<TimelineOutlined />}
+            />
+          )}
           {getCurrentUserRole() !== "editor" && getCurrentUserRole() !== "moderator" &&
             <Item
               title="Learners"

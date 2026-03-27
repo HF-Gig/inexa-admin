@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Button,
@@ -61,7 +61,6 @@ const Providers = () => {
   const handleSortChange = (col, dir) => {
     setSortCol(col);
     setSortDir(dir);
-    fetchProviders(page, rowsPerPage, col, dir, debouncedSearch);
   };
 
   const fetchProviders = async (pageArg = page, rowsPerPageArg = rowsPerPage, sortColArg = sortCol, sortDirArg = sortDir, searchArg = debouncedSearch) => {
@@ -119,11 +118,12 @@ const Providers = () => {
   };
 
   const tableColumns = [
-    { name: "id", label: "ID", width: 80 },
+    { name: "rowNumber", label: "No.", width: 80, sortable: false },
     {
       name: "logo_url",
       label: "Logo",
       width: 80,
+      sortable: false,
       render: (row) =>
         row.logo_url ? (
           <Avatar
@@ -152,6 +152,7 @@ const Providers = () => {
       name: "status",
       label: "Status",
       width: 100,
+      sortable: false,
       render: (row) => (
         <Checkbox
           checked={row.status}
@@ -161,6 +162,29 @@ const Providers = () => {
       ),
     },
   ];
+
+  const sortedProviders = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    const list = [...providers];
+    const compareText = (a, b) => String(a ?? "").localeCompare(String(b ?? ""), undefined, { sensitivity: "base" });
+
+    list.sort((a, b) => {
+      if (sortCol === "id") return (Number(a.id) - Number(b.id)) * dir;
+      if (sortCol === "name" || sortCol === "slug") return compareText(a[sortCol], b[sortCol]) * dir;
+      return 0;
+    });
+
+    return list;
+  }, [providers, sortCol, sortDir]);
+
+  const tableData = useMemo(
+    () =>
+      sortedProviders.map((provider, index) => ({
+        ...provider,
+        rowNumber: page * rowsPerPage + index + 1,
+      })),
+    [sortedProviders, page, rowsPerPage]
+  );
 
   return (
     <Box sx={{ minHeight: "100vh" }}>
@@ -192,7 +216,7 @@ const Providers = () => {
         </Box>
         <CommonTable
           columns={tableColumns}
-          data={providers}
+          data={tableData}
           total={total}
           page={page}
           rowsPerPage={rowsPerPage}

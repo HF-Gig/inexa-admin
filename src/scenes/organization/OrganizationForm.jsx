@@ -81,13 +81,14 @@ const OrganizationForm = ({ mode = "add" }) => {
                             });
                         } else {
                             showToast({
-                                message: `Failed to save organization. Please try again.`,
+                                message: res.data?.message || "Failed to save organization. Please try again.",
                                 severity: "error",
                             });
                         }
                     } catch (e) {
+                        const apiMessage = e.response?.data?.message;
                         showToast({
-                            message: `Failed to save organization. Please try again.`,
+                            message: apiMessage || "Failed to save organization. Please try again.",
                             severity: "error",
                         });
                     } finally {

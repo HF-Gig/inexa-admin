@@ -10,6 +10,7 @@ import Organization from "./organization";
 import OrganizationForm from "./organization/OrganizationForm";
 import Management from "./management";
 import Payments from "./payments";
+import SiteStatistics from "./siteStatistics";
 export { default as Staff } from "./staff";
 export { default as StaffForm } from "./staff/StaffForm";
 export { default as Subscriptions } from "./subscriptions";
@@ -28,4 +29,5 @@ export {
   OrganizationForm,
   Management,
   Payments,
+  SiteStatistics,
 };

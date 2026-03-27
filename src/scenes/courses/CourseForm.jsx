@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Button, Grid, Typography, CircularProgress, FormHelperText, FormControlLabel, Checkbox } from "@mui/material";
+import { Box, Button, Grid, Typography, CircularProgress, FormHelperText, FormControlLabel, Checkbox, MenuItem, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import { Formik, Form } from "formik";
@@ -13,6 +13,7 @@ import { useRef } from 'react';
 import CommonTextEditor from "../../components/CommonTextEditor";
 import { getInitialValues, getValidationSchema } from "../../constants/courseFormSchemas";
 import languagesData from "../../assets/languages.json";
+import countries from "../../assets/countries.json";
 import { useSearchParams } from "react-router-dom";
 
 function toSlugUnderscore(str) {
@@ -62,6 +63,18 @@ const CourseForm = ({ mode = "add", page }) => {
 
     const [imagePreview, setImagePreview] = useState(null);
     const [pdfPreview, setPdfPreview] = useState(null);
+    const [newProgramCardBullet, setNewProgramCardBullet] = useState("");
+    const [selectedProviderId, setSelectedProviderId] = useState(null);
+    const [countryCostRows, setCountryCostRows] = useState([]);
+    const [isCountryCostModalOpen, setIsCountryCostModalOpen] = useState(false);
+    const [countryCostModalMode, setCountryCostModalMode] = useState("add");
+    const [editingCountryCostId, setEditingCountryCostId] = useState(null);
+    const [deleteCountryCostRow, setDeleteCountryCostRow] = useState(null);
+    const [countryCostForm, setCountryCostForm] = useState({
+        countryCode: "DEFAULT",
+        interactiveCost: "",
+    });
+    const isInexaProvider = Number(selectedProviderId) === 7;
 
     useEffect(() => {
         const fetchFilters = async () => {
@@ -82,6 +95,7 @@ const CourseForm = ({ mode = "add", page }) => {
                 const providerObj = data.course_provider_id ? filters?.course_providers?.find(p => p.id === data.course_provider_id) : null;
                 setOwnerInput(ownerObj ? ownerObj.name : '');
                 setProviderInput(providerObj ? providerObj.name : '');
+                setSelectedProviderId(providerObj?.id || null);
                 const safeData = Object.fromEntries(
                     Object.entries(data).filter(([key]) => key in getInitialValues(page))
                 );
@@ -91,13 +105,23 @@ const CourseForm = ({ mode = "add", page }) => {
                     ...safeData,
                     outcome: data.outcome || '',
                     enrollment_count: data.enrollment_count,
-                    price: data.price,
+                    first_payment: data.first_payment || "",
+                    quarterly_payment: data.quarterly_payment || "",
                     self_cost: data.self_cost,
                     self_caption: data.self_caption,
                     interactive_cost: data.interactive_cost,
                     interactive_caption: data.interactive_caption,
                     payment_type_self: data.payment_type_self,
                     payment_type_interactive: data.payment_type_interactive,
+                    payment_option_once_off: data.payment_option_once_off ?? true,
+                    payment_option_thirty_sixty: data.payment_option_thirty_sixty ?? true,
+                    payment_option_monthly_11: data.payment_option_monthly_11 ?? true,
+                    payment_option_quarterly_3: data.payment_option_quarterly_3 ?? true,
+                    payment_first_30_60: data.payment_first_30_60 ?? "",
+                    payment_second_30_60: data.payment_second_30_60 ?? "",
+                    payment_third_30_60: data.payment_third_30_60 ?? "",
+                    payment_first_monthly_11: data.payment_first_monthly_11 ?? "",
+                    payment_first_quarterly_3: data.payment_first_quarterly_3 ?? "",
 
                     card_short: data.card_short,
                     admission_steps: data.admission_steps,
@@ -181,6 +205,119 @@ const CourseForm = ({ mode = "add", page }) => {
             setLoading(false);
         }
     }, [filters, mode, id, page]);
+
+    useEffect(() => {
+        const loadCountryCostRows = async () => {
+            if (!selectedProviderId || !id || !isInexaProvider) {
+                setCountryCostRows([]);
+                return;
+            }
+            try {
+                const res = await api.get(`/costs?providerId=${selectedProviderId}&courseId=${id}`);
+                setCountryCostRows(res?.data?.data || []);
+            } catch (error) {
+                showToast({ message: "Failed to load country-wise pricing for selected provider.", severity: "error" });
+            }
+        };
+        loadCountryCostRows();
+    }, [selectedProviderId, id, isInexaProvider, showToast]);
+
+    const handleOpenCountryCostModal = () => {
+        if (mode === "view") return;
+        if (!id) {
+            showToast({ message: "Save course first, then add country pricing.", severity: "error" });
+            return;
+        }
+        if (!isInexaProvider) {
+            showToast({ message: "Country pricing is available only for Inexa provider.", severity: "error" });
+            return;
+        }
+        setCountryCostModalMode("add");
+        setEditingCountryCostId(null);
+        setCountryCostForm({
+            countryCode: "DEFAULT",
+            interactiveCost: "",
+        });
+        setIsCountryCostModalOpen(true);
+    };
+
+    const handleCloseCountryCostModal = () => {
+        setIsCountryCostModalOpen(false);
+        setCountryCostModalMode("add");
+        setEditingCountryCostId(null);
+    };
+
+    const handleCountryCostFormChange = (field, value) => {
+        setCountryCostForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleSaveCountryCost = async () => {
+        if (countryCostForm.countryCode === "ALL") {
+            showToast({ message: "Please select a specific country or Default.", severity: "error" });
+            return;
+        }
+
+        try {
+            if (countryCostModalMode === "edit" && editingCountryCostId) {
+                await api.put(`/costs/${editingCountryCostId}`, {
+                    providerId: selectedProviderId,
+                    courseId: id,
+                    countryCode: countryCostForm.countryCode === "DEFAULT" ? "" : countryCostForm.countryCode,
+                    interactiveCost: countryCostForm.interactiveCost,
+                });
+            } else {
+                await api.post("/costs/update", {
+                    providerId: selectedProviderId,
+                    courseId: id,
+                    countryCode: countryCostForm.countryCode === "DEFAULT" ? "" : countryCostForm.countryCode,
+                    interactiveCost: countryCostForm.interactiveCost,
+                });
+            }
+            const res = await api.get(`/costs?providerId=${selectedProviderId}&courseId=${id}`);
+            setCountryCostRows(res?.data?.data || []);
+            setIsCountryCostModalOpen(false);
+            setCountryCostModalMode("add");
+            setEditingCountryCostId(null);
+            showToast({
+                message: countryCostModalMode === "edit" ? "Pricing updated successfully." : "Pricing row added successfully.",
+                severity: "success"
+            });
+        } catch (error) {
+            showToast({
+                message: error?.response?.data?.error || (countryCostModalMode === "edit" ? "Failed to update pricing row." : "Failed to add pricing row."),
+                severity: "error"
+            });
+        }
+    };
+
+    const handleEditCountryCost = async (row) => {
+        if (mode === "view") return;
+        setCountryCostModalMode("edit");
+        setEditingCountryCostId(row?.id || null);
+        setCountryCostForm({
+            countryCode: row?.country_code || "DEFAULT",
+            interactiveCost: row?.interactive_cost ?? "",
+        });
+        setIsCountryCostModalOpen(true);
+    };
+
+    const handleDeleteCountryCost = async (row) => {
+        if (mode === "view") return;
+        setDeleteCountryCostRow(row);
+    };
+
+    const handleConfirmDeleteCountryCost = async () => {
+        if (!deleteCountryCostRow?.id) return;
+        try {
+            await api.delete(`/costs/${deleteCountryCostRow.id}`);
+            const res = await api.get(`/costs?providerId=${selectedProviderId}&courseId=${id}`);
+            setCountryCostRows(res?.data?.data || []);
+            setDeleteCountryCostRow(null);
+            showToast({ message: "Pricing deleted successfully.", severity: "success" });
+        } catch (error) {
+            showToast({ message: error?.response?.data?.error || "Failed to delete pricing.", severity: "error" });
+        }
+    };
 
     // Filtering logic for each dropdown
     useEffect(() => {
@@ -341,10 +478,16 @@ const CourseForm = ({ mode = "add", page }) => {
                         formData.append('enrollment_count', null);
                     }
 
-                    if (values.price !== null && values.price !== undefined) {
-                        formData.append('price', values.price)
+                    if (values.first_payment !== null && values.first_payment !== undefined && values.first_payment !== "") {
+                        formData.append('first_payment', values.first_payment)
                     } else {
-                        formData.append('price', "");
+                        formData.append('first_payment', "");
+                    }
+
+                    if (values.quarterly_payment !== null && values.quarterly_payment !== undefined && values.quarterly_payment !== "") {
+                        formData.append('quarterly_payment', values.quarterly_payment)
+                    } else {
+                        formData.append('quarterly_payment', "");
                     }
 
                     if (values.self_cost !== null && values.self_cost !== undefined) {
@@ -439,7 +582,7 @@ const CourseForm = ({ mode = "add", page }) => {
                     }
                     // Append all other fields that are not handled above
                     const skipFields = [
-                        'subject', 'order', 'owner', 'image_url', 'degree_pdf_path', 'staff', 'facilitator', 'enrollment_count', 'price', 'card_short', 'cert_and_cred_pathways', 'fee_highlights', 'key_highlights', 'course_snapshot', 'admission_steps', 'admission_steps_desc', 'degree_detail_short_desc', 'register_link', 'weeks_to_complete', 'languages', 'course_provider_id', 'efforts', 'transcript_languages', 'breakdown_description', 'self_cost', 'self_caption', 'interactive_cost', 'interactive_caption'
+                        'subject', 'order', 'owner', 'image_url', 'degree_pdf_path', 'staff', 'facilitator', 'enrollment_count', 'first_payment', 'quarterly_payment', 'card_short', 'cert_and_cred_pathways', 'fee_highlights', 'key_highlights', 'course_snapshot', 'admission_steps', 'admission_steps_desc', 'degree_detail_short_desc', 'register_link', 'weeks_to_complete', 'languages', 'course_provider_id', 'efforts', 'transcript_languages', 'breakdown_description', 'self_cost', 'self_caption', 'interactive_cost', 'interactive_caption'
                     ];
                     Object.entries(values).forEach(([key, value]) => {
                         if (skipFields.includes(key)) return;
@@ -499,6 +642,19 @@ const CourseForm = ({ mode = "add", page }) => {
                             setOwnerInput('');
                         }
                     }, [values.isCobranding, setFieldValue]);
+
+                    const paymentSecondThirdTotal3060 = (() => {
+                        const second = values.payment_second_30_60;
+                        const third = values.payment_third_30_60;
+                        const secondEmpty = second === "" || second === null || second === undefined;
+                        const thirdEmpty = third === "" || third === null || third === undefined;
+                        if (secondEmpty && thirdEmpty) return "";
+                        const n2 = secondEmpty ? 0 : Number(second);
+                        const n3 = thirdEmpty ? 0 : Number(third);
+                        const total = n2 + n3;
+                        return Number.isFinite(total) ? total : "";
+                    })();
+
                     return (
                         <Form>
                             <Grid container spacing={2}>
@@ -596,6 +752,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                             console.log('provider onChange val:', val);
                                             setFieldValue("provider", val);
                                             setProviderInput(val?.name || "");
+                                            setSelectedProviderId(val?.id || null);
                                         }}
                                         options={filteredProviders.map(p => ({ value: p, label: p.name }))}
                                         allOptions={filters?.course_providers?.map(p => ({ value: p, label: p.name }))}
@@ -1386,19 +1543,193 @@ const CourseForm = ({ mode = "add", page }) => {
                                         disabled={mode === 'view'}
                                     />
                                 </Grid>
-                                {isProgram &&
-                                    <Grid item xs={12} md={4}>
+                                {isInexaProvider && (
+                                    <Grid item xs={12}>
+                                        <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 2, p: 2 }}>
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                                Add multiple country prices for this selected Inexa course. (Note: Add cost in USD Only)
+                                            </Typography>
+
+                                            {mode !== "view" && (
+                                                <Box mt={2} display="flex" justifyContent="flex-end">
+                                                    <Button
+                                                        variant="contained"
+                                                        color="secondary"
+                                                        onClick={handleOpenCountryCostModal}
+                                                        disabled={!id}
+                                                    >
+                                                        Add Country Price
+                                                    </Button>
+                                                </Box>
+                                            )}
+                                            <Box mt={2} sx={{ overflowX: "auto" }}>
+                                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                                    <thead>
+                                                        <tr>
+                                                            <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Country</th>
+                                                            <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Interactive Cost</th>
+                                                            {mode !== "view" && (
+                                                                <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Actions</th>
+                                                            )}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {(countryCostRows || [])
+                                                            .map((row) => (
+                                                                <tr key={row.id}>
+                                                                    <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>
+                                                                        {row.country_code === "DEFAULT" ? "Default (All Countries)" : row.country_code}
+                                                                    </td>
+                                                                    <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>${row.interactive_cost ?? "-"}</td>
+                                                                    {mode !== "view" && (
+                                                                        <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>
+                                                                            <Box display="flex" gap={1}>
+                                                                                <Button
+                                                                                    size="small"
+                                                                                    variant="outlined"
+                                                                                    color="secondary"
+                                                                                    onClick={() => handleEditCountryCost(row)}
+                                                                                >
+                                                                                    Edit
+                                                                                </Button>
+                                                                                <Button
+                                                                                    size="small"
+                                                                                    variant="outlined"
+                                                                                    color="error"
+                                                                                    onClick={() => handleDeleteCountryCost(row)}
+                                                                                >
+                                                                                    Delete
+                                                                                </Button>
+                                                                            </Box>
+                                                                        </td>
+                                                                    )}
+                                                                </tr>
+                                                            ))}
+                                                    </tbody>
+                                                </table>
+                                            </Box>
+                                        </Box>
+                                    </Grid>
+                                )}
+                                {isInexaProvider && (<>
+                                    <Grid item xs={12}>
+                                        <Typography variant="h6" sx={{ mt: 1, mb: 1 }}>Subscription Payment Options</Typography>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={Boolean(values.payment_option_once_off)}
+                                                    onChange={(e) => setFieldValue("payment_option_once_off", e.target.checked)}
+                                                    disabled={mode === 'view'}
+                                                />
+                                            }
+                                            label="Once-off payment of $1190"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={Boolean(values.payment_option_thirty_sixty)}
+                                                    onChange={(e) => setFieldValue("payment_option_thirty_sixty", e.target.checked)}
+                                                    disabled={mode === 'view'}
+                                                />
+                                            }
+                                            label="First payment, then 2 additional payments (30 and 60 days)"
+                                        />
+                                    </Grid>
+                                {Boolean(values.payment_option_thirty_sixty) && (
+                                    <>
+                                        <Grid item xs={12} md={4}>
+                                            <CommonTextField
+                                                name="payment_first_30_60"
+                                                label="First payment"
+                                                type="number"
+                                                value={values.payment_first_30_60}
+                                                onChange={e => setFieldValue("payment_first_30_60", e.target.value)}
+                                                disabled={mode === 'view'}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} md={8}>
+                                            <CommonTextField
+                                                name="payment_secondThird_total_30_60"
+                                                label="Second+Third amount (splits equally)"
+                                                type="number"
+                                                value={paymentSecondThirdTotal3060}
+                                                onChange={(e) => {
+                                                    const rawTotal = e.target.value;
+                                                    if (rawTotal === "" || rawTotal === null || rawTotal === undefined) {
+                                                        setFieldValue("payment_second_30_60", "");
+                                                        setFieldValue("payment_third_30_60", "");
+                                                        return;
+                                                    }
+                                                    const total = Number(rawTotal);
+                                                    if (!Number.isFinite(total)) {
+                                                        setFieldValue("payment_second_30_60", "");
+                                                        setFieldValue("payment_third_30_60", "");
+                                                        return;
+                                                    }
+                                                    const each = Math.round((total / 2) * 100) / 100;
+                                                    setFieldValue("payment_second_30_60", each);
+                                                    setFieldValue("payment_third_30_60", each);
+                                                }}
+                                                disabled={mode === 'view'}
+                                            />
+                                        </Grid>
+                                    </>
+                                )}
+                                    <Grid item xs={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={Boolean(values.payment_option_monthly_11)}
+                                                    onChange={(e) => setFieldValue("payment_option_monthly_11", e.target.checked)}
+                                                    disabled={mode === 'view'}
+                                                />
+                                            }
+                                            label="First payment, then monthly payments (11 months)"
+                                        />
+                                    </Grid>
+                                {Boolean(values.payment_option_monthly_11) && (
+                                    <Grid item xs={12} md={6}>
                                         <CommonTextField
-                                            name="price"
-                                            label="Price"
-                                            value={values.price}
-                                            onChange={e => setFieldValue("price", e.target.value)}
-                                            error={touched.price && Boolean(errors.price)}
-                                            helperText={errors.price}
+                                            name="payment_first_monthly_11"
+                                            label="First payment"
+                                            type="number"
+                                            value={values.payment_first_monthly_11}
+                                            onChange={e => setFieldValue("payment_first_monthly_11", e.target.value)}
                                             disabled={mode === 'view'}
                                         />
                                     </Grid>
-                                }
+                                )}
+                                    <Grid item xs={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={Boolean(values.payment_option_quarterly_3)}
+                                                    onChange={(e) => setFieldValue("payment_option_quarterly_3", e.target.checked)}
+                                                    disabled={mode === 'view'}
+                                                />
+                                            }
+                                            label="First payment, then 3 quarterly payments"
+                                        />
+                                    </Grid>
+                                {Boolean(values.payment_option_quarterly_3) && (
+                                    <Grid item xs={12} md={6}>
+                                        <CommonTextField
+                                            name="payment_first_quarterly_3"
+                                            label="First payment"
+                                            type="number"
+                                            value={values.payment_first_quarterly_3}
+                                            onChange={e => setFieldValue("payment_first_quarterly_3", e.target.value)}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                )}
+                                </>
+                                )}
+                                {/* Legacy first/quarterly pricing inputs removed; using subscription options above */}
                                 {isProgram &&
                                     <Grid item xs={12} md={4}>
                                         <CommonTextField
@@ -1501,7 +1832,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                         </Grid>
                                     </>
                                 )}
-                                {isProgram &&
+                                {isProgram && (
                                     <Grid item xs={12}>
                                         <CommonTextField
                                             name="card_short"
@@ -1513,7 +1844,131 @@ const CourseForm = ({ mode = "add", page }) => {
                                             disabled={mode === 'view'}
                                         />
                                     </Grid>
-                                }
+                                )}
+                                {(isProgram || isInexaProvider) && (
+                                    <>
+                                        <Grid item xs={12}>
+                                            <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                                                Inexa Program Card (Course Detail Page)
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <CommonTextField
+                                                name="program_card_title"
+                                                label="Card Title"
+                                                value={values.program_card_title}
+                                                onChange={e => setFieldValue("program_card_title", e.target.value)}
+                                                error={touched.program_card_title && Boolean(errors.program_card_title)}
+                                                helperText={errors.program_card_title}
+                                                disabled={mode === 'view'}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <CommonTextField
+                                                name="program_card_subtitle"
+                                                label="Card Subtitle"
+                                                value={values.program_card_subtitle}
+                                                onChange={e => setFieldValue("program_card_subtitle", e.target.value)}
+                                                error={touched.program_card_subtitle && Boolean(errors.program_card_subtitle)}
+                                                helperText={errors.program_card_subtitle}
+                                                disabled={mode === 'view'}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12}>
+                                            {(() => {
+                                                const bullets = (values.program_card_bullets || "")
+                                                    .split('\n')
+                                                    .map(b => b.trim())
+                                                    .filter(Boolean);
+                                                return (
+                                                    <>
+                                                        <Box display="flex" gap={1} alignItems="center" mb={1}>
+                                                            <CommonTextField
+                                                                label="Add bullet point"
+                                                                value={newProgramCardBullet}
+                                                                onChange={e => setNewProgramCardBullet(e.target.value)}
+                                                                disabled={mode === 'view'}
+                                                                fullWidth
+                                                            />
+                                                            <Button
+                                                                variant="contained"
+                                                                size="small"
+                                                                sx={{ whiteSpace: 'nowrap', px: 2, minWidth: 'auto' }}
+                                                                onClick={() => {
+                                                                    const text = (newProgramCardBullet || '').trim();
+                                                                    if (!text) return;
+                                                                    const current = (values.program_card_bullets || "")
+                                                                        .split('\n')
+                                                                        .map(b => b.trim())
+                                                                        .filter(Boolean);
+                                                                    const updated = [...current, text];
+                                                                    setFieldValue("program_card_bullets", updated.join('\n'));
+                                                                    setNewProgramCardBullet("");
+                                                                }}
+                                                                disabled={mode === 'view'}
+                                                            >
+                                                                Add
+                                                            </Button>
+                                                        </Box>
+                                                        {bullets.length > 0 && (
+                                                            <Box mt={1}>
+                                                                {bullets.map((b, idx) => (
+                                                                    <Box
+                                                                        key={idx}
+                                                                        display="flex"
+                                                                        alignItems="center"
+                                                                        justifyContent="space-between"
+                                                                        mb={0.5}
+                                                                        sx={{ border: '1px solid #eee', borderRadius: 1, px: 1, py: 0.5 }}
+                                                                    >
+                                                                        <Typography variant="body2">{b}</Typography>
+                                                                        <Button
+                                                                            size="small"
+                                                                            color="error"
+                                                                            sx={{ minWidth: 'auto', px: 1.5 }}
+                                                                            onClick={() => {
+                                                                                const updated = bullets.filter((_, i) => i !== idx);
+                                                                                setFieldValue("program_card_bullets", updated.join('\n'));
+                                                                            }}
+                                                                            disabled={mode === 'view'}
+                                                                        >
+                                                                            Remove
+                                                                        </Button>
+                                                                    </Box>
+                                                                ))}
+                                                            </Box>
+                                                        )}
+                                                        {touched.program_card_bullets && errors.program_card_bullets && (
+                                                            <FormHelperText error>{errors.program_card_bullets}</FormHelperText>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <CommonTextField
+                                                name="program_card_caption"
+                                                label="Card Caption (optional line under bullets)"
+                                                value={values.program_card_caption}
+                                                onChange={e => setFieldValue("program_card_caption", e.target.value)}
+                                                error={touched.program_card_caption && Boolean(errors.program_card_caption)}
+                                                helperText={errors.program_card_caption}
+                                                disabled={mode === 'view'}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <CommonTextField
+                                                name="program_card_info_url"
+                                                label="More Info URL (e.g. /info/your-program)"
+                                                value={values.program_card_info_url}
+                                                onChange={e => setFieldValue("program_card_info_url", e.target.value)}
+                                                error={touched.program_card_info_url && Boolean(errors.program_card_info_url)}
+                                                helperText={errors.program_card_info_url}
+                                                disabled={mode === 'view'}
+                                            />
+                                        </Grid>
+                                    </>
+                                )}
                                 {isProgram &&
                                     <Grid item xs={12}>
                                         <CommonTextEditor
@@ -1657,6 +2112,79 @@ const CourseForm = ({ mode = "add", page }) => {
                                     </Button>
                                 </Grid>
                             </Grid>
+                            <Dialog
+                                open={isCountryCostModalOpen}
+                                onClose={handleCloseCountryCostModal}
+                                fullWidth
+                                maxWidth="sm"
+                                PaperProps={{
+                                    sx: {
+                                        bgcolor: "#fff",
+                                        color: "text.primary",
+                                        backgroundImage: "none",
+                                    },
+                                }}
+                            >
+                                <DialogTitle>{countryCostModalMode === "edit" ? "Edit Country Price" : "Add Country Price"}</DialogTitle>
+                                <DialogContent>
+                                    <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                                        <Grid item xs={12}>
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                label="Country"
+                                                value={countryCostForm.countryCode}
+                                                onChange={(e) => handleCountryCostFormChange("countryCode", e.target.value)}
+                                            >
+                                                <MenuItem value="DEFAULT">Default (All Countries)</MenuItem>
+                                                {countries.map((country) => (
+                                                    <MenuItem key={country.iso} value={country.iso}>
+                                                        {country.country} ({country.iso})
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <TextField
+                                                fullWidth
+                                                type="number"
+                                                label="Interactive Cost"
+                                                value={countryCostForm.interactiveCost}
+                                                onChange={(e) => handleCountryCostFormChange("interactiveCost", e.target.value)}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                </DialogContent>
+                                <DialogActions sx={{ px: 3, pb: 2 }}>
+                                    <Button onClick={handleCloseCountryCostModal} variant="outlined">
+                                        Cancel
+                                    </Button>
+                                    <Button onClick={handleSaveCountryCost} variant="contained" color="secondary">
+                                        Save
+                                    </Button>
+                                </DialogActions>
+                            </Dialog>
+                            <Dialog
+                                open={Boolean(deleteCountryCostRow)}
+                                onClose={() => setDeleteCountryCostRow(null)}
+                                fullWidth
+                                maxWidth="xs"
+                            >
+                                <DialogTitle>Delete Country Price</DialogTitle>
+                                <DialogContent>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Are you sure you want to delete this pricing row?
+                                    </Typography>
+                                </DialogContent>
+                                <DialogActions sx={{ px: 3, pb: 2 }}>
+                                    <Button onClick={() => setDeleteCountryCostRow(null)} variant="outlined">
+                                        Cancel
+                                    </Button>
+                                    <Button onClick={handleConfirmDeleteCountryCost} variant="contained" color="error">
+                                        Delete
+                                    </Button>
+                                </DialogActions>
+                            </Dialog>
                         </Form>
                     );
                 }}

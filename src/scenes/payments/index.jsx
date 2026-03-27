@@ -69,6 +69,7 @@ const Payments = () => {
     const getStatusChip = (status) => {
         const statusMap = {
             initiated: { color: "warning", label: "Initiated", icon: <AccessTime /> },
+            pending: { color: "info", label: "Pending", icon: <AccessTime /> },
             succeeded: { color: "success", label: "Succeeded", icon: <CheckCircle /> },
             sent: { color: "secondary", label: "Payment Sent", icon: <AccessTime /> },
             failed: { color: "error", label: "Failed", icon: <Cancel /> },
@@ -130,6 +131,43 @@ const Payments = () => {
             render: (row) => (
                 <Typography variant="body2" sx={{ textTransform: "capitalize" }}>
                     {row.payment_type}
+                </Typography>
+            ),
+        },
+        {
+            name: "payment_method",
+            label: "Method",
+            render: (row) => (
+                <Typography variant="body2" sx={{ textTransform: "capitalize" }}>
+                    {row.payment_method || "N/A"}
+                </Typography>
+            ),
+        },
+        {
+            name: "selected_plan",
+            label: "Plan",
+            render: (row) => (
+                <Typography variant="body2" sx={{ textTransform: "capitalize" }}>
+                    {row.selected_plan || "N/A"}
+                </Typography>
+            ),
+        },
+        {
+            name: "installment",
+            label: "Installment",
+            render: (row) => (
+                <Typography variant="body2">
+                    {row.installment_label || "N/A"}{" "}
+                    {row.installment_number && row.total_installments ? `(${row.installment_number}/${row.total_installments})` : ""}
+                </Typography>
+            ),
+        },
+        {
+            name: "due_date",
+            label: "Due Date",
+            render: (row) => (
+                <Typography variant="body2">
+                    {row.due_date ? new Date(row.due_date).toLocaleDateString() : "N/A"}
                 </Typography>
             ),
         },
@@ -215,6 +253,7 @@ const Payments = () => {
                             <em>All</em>
                         </MenuItem>
                         <MenuItem value="initiated">Initiated</MenuItem>
+                        <MenuItem value="pending">Pending</MenuItem>
                         <MenuItem value="succeeded">Succeeded</MenuItem>
                         <MenuItem value="sent">Payment Sent</MenuItem>
                         <MenuItem value="failed">Failed</MenuItem>

@@ -136,7 +136,8 @@ const Users = () => {
   const handleDeleteUser = async (userId) => {
     try {
       await api.delete(`/users/${userId}`);
-      setUsers({ ...users, data: users.data.filter(user => user.id !== userId) });
+      const userIdNum = Number(userId);
+      setUsers({ ...users, data: users.data.filter((user) => Number(user.id) !== userIdNum) });
       setSnackbar({
         open: true,
         message: "User deleted successfully!",
@@ -221,16 +222,23 @@ const Users = () => {
     );
   }
 
+  const getDisplayName = (user) => {
+    const firstName = typeof user?.first_name === "string" ? user.first_name.trim() : "";
+    const lastName = typeof user?.last_name === "string" ? user.last_name.trim() : "";
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName || "-";
+  };
+
   // Apply frontend filtering by name or email
   let filteredUsers = users?.data?.filter((u) => {
-    const fullName = `${u.first_name} ${u.last_name}`.toLowerCase();
+    const fullName = getDisplayName(u).toLowerCase();
     const email = u.email?.toLowerCase() || "";
     const term = searchTerm.toLowerCase();
     return fullName.includes(term) || email.includes(term);
   })
     .map((u) => ({
       ...u,
-      name: `${u.first_name} ${u.last_name}`,
+      name: getDisplayName(u),
     }));
 
   // Apply frontend sorting

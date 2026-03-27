@@ -14,6 +14,7 @@ import {
   Subscriptions,
   Payments,
   Costs,
+  SiteStatistics,
 } from "./scenes";
 import PrivateRoute from "./components/PrivateRoute";
 import Organization from "./scenes/organization";
@@ -260,6 +261,14 @@ const AppRouter = () => {
             element={
               <PrivateRoute>
                 <Costs />
+              </PrivateRoute>
+            }
+          />
+           <Route
+            path="/home-page"
+            element={
+              <PrivateRoute>
+                <SiteStatistics />
               </PrivateRoute>
             }
           />

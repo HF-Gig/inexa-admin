@@ -8,19 +8,11 @@ import {
   DialogTitle,
   IconButton,
   Paper,
-  // TableBody,
-  // TableCell,
-  // TableContainer,
-  // TableHead,
-  // TableRow,
-  // TextField,
+  TextField,
   Typography,
-  // MenuItem,
-  // Chip,
   Alert,
+  MenuItem,
   Snackbar,
-  // CircularProgress,
-  // FormControlLabel,
   Checkbox,
 } from "@mui/material";
 import { Edit, Delete, Add, School, Visibility, Download } from "@mui/icons-material";
@@ -31,6 +23,14 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useToast } from "../../components/ToastProvider";
 import CommonSearchBar from "../../components/CommonSearchBar";
+import CommonDateRangeSelect from "../../components/CommonDateRangeSelect";
+
+const formatLocalYmd = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
 
 // Mock course data
 const mockCourses = [
@@ -147,6 +147,8 @@ const Courses = ({ pageType = 'courses' }) => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [universityFilter, setUniversityFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [createdAtRange, setCreatedAtRange] = useState(undefined);
+  const [updatedAtRange, setUpdatedAtRange] = useState(undefined);
   const [universities, setUniversities] = useState([]);
   const [types, setTypes] = useState([]);
 
@@ -174,10 +176,18 @@ const Courses = ({ pageType = 'courses' }) => {
 
   useEffect(() => {
     fetchCourses();
-    fetchUniversities();
-    // fetchTypes();
     // eslint-disable-next-line
-  }, [page, rowsPerPage, sortCol, sortDir, debouncedSearch, universityFilter, typeFilter, location]);
+  }, [ page, rowsPerPage, sortCol, sortDir, debouncedSearch, universityFilter, typeFilter, createdAtRange, updatedAtRange, location, pageType,]);
+
+  useEffect(() => {
+    fetchUniversities();
+    fetchTypes();
+    // eslint-disable-next-line
+  }, []);
+
+  useEffect(() => {
+    setPage(0);
+  }, [universityFilter, typeFilter, createdAtRange, updatedAtRange]);
 
   useEffect(() => {
     if (location.state?.toast) {
@@ -192,8 +202,9 @@ const Courses = ({ pageType = 'courses' }) => {
       setLoading(true);
       // Map frontend column names to backend field names for sorting
       let backendSortCol = sortCol;
-      if (sortCol === 'owner') backendSortCol = 'owner_id';
+      if (sortCol === 'owner') backendSortCol = 'owners';
       if (sortCol === 'type') backendSortCol = 'type_id';
+      if (sortCol === 'rowNumber') backendSortCol = 'id';
       const contentTypeMap = {
         courses: 'courses',
         programs: 'program',
@@ -207,9 +218,20 @@ const Courses = ({ pageType = 'courses' }) => {
         content_type: contentTypeMap[pageType] || 'both',
         search: debouncedSearch,
       });
-      if (universityFilter) params.append('university_id', universityFilter);
-      if (typeFilter) params.append('type_id', typeFilter);
-
+      if (universityFilter) params.append('owners', universityFilter);
+      if (typeFilter) params.append('program_type_slug', typeFilter);
+      if (createdAtRange?.from) {
+        params.append("created_from", formatLocalYmd(createdAtRange.from));
+      }
+      if (createdAtRange?.to) {
+        params.append("created_to", formatLocalYmd(createdAtRange.to));
+      }
+      if (updatedAtRange?.from) {
+        params.append("updated_from", formatLocalYmd(updatedAtRange.from));
+      }
+      if (updatedAtRange?.to) {
+        params.append("updated_to", formatLocalYmd(updatedAtRange.to));
+      }
       const response = await api.get(`/courses?${params.toString()}`);
       console.log(`${pageType === 'programs' ? 'Programs' : 'Courses'} fetched: `, response.data);
       if (response.status !== 200) throw new Error('Failed to fetch courses');
@@ -237,16 +259,17 @@ const Courses = ({ pageType = 'courses' }) => {
     }
   };
 
-  // const fetchTypes = async () => {
-  //   try {
-  //     const response = await api.get('/program-types');
-  //     if (response.status === 200) {
-  //       setTypes(response.data || []);
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to fetch types:', error);
-  //   }
-  // };
+  const fetchTypes = async () => {
+    try {
+      // Returns program types as: { id, name, slug }
+      const response = await api.get('/courses/filters');
+      if (response.status === 200) {
+        setTypes(response.data?.program_types || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch program types:', error);
+    }
+  };
 
   const handleDeleteCourse = async (courseId) => {
     try {
@@ -343,11 +366,12 @@ const Courses = ({ pageType = 'courses' }) => {
 
   // Table columns for CommonTable
   const tableColumns = [
-    { name: "id", label: "ID", width: 80 },
+    { name: "rowNumber", label: "No.", width: 80 },
     { name: "title", label: "Title", width: 200, align: "left" },
     {
       name: "type", label: "Type", width: 150, render: (row) => {
         const typeInfo = getTypeInfo(row.type_id);
+        const displayName = row.program_type_name || typeInfo.name;
         return (
           <Box
             sx={{
@@ -364,7 +388,7 @@ const Courses = ({ pageType = 'courses' }) => {
               textAlign: 'center',
             }}
           >
-            {typeInfo.name}
+            {displayName}
           </Box>
         );
       }
@@ -375,7 +399,7 @@ const Courses = ({ pageType = 'courses' }) => {
     { name: "createdAt", label: "Created At", width: "fit-content" },
     { name: "updatedAt", label: "Updated At", width: "fit-content" },
     { name: "pacing_type", label: "Pacing Type", width: 120 },
-    { name: "status", label: "Active", width: 80, render: (row) => <Checkbox checked={row.status === 1} onChange={(e) => handleStatusToggle(row, e.target.checked)} /> },
+    { name: "status", label: "Active", width: 80, sortable: false, render: (row) => <Checkbox checked={row.status === 1} onChange={(e) => handleStatusToggle(row, e.target.checked)} /> },
   ];
 
   return (
@@ -439,15 +463,63 @@ const Courses = ({ pageType = 'courses' }) => {
           </Box>
         </Box>
         <Box mt={1} mb={2}>
-          <CommonSearchBar value={search} onChange={setSearch} placeholder={`Search ${pageType === 'courses' ? 'courses' : 'programmes'}...`} sx={{ maxWidth: 350 }} />
+          <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+            <CommonSearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder={`Search ${pageType === 'courses' ? 'courses' : 'programmes'}...`}
+              sx={{ maxWidth: 350, flex: "1 1 250px" }}
+            />
+            <TextField
+              select
+              label="Program Type"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              size="small"
+              sx={{ minWidth: 240 }}
+            >
+              <MenuItem value="">
+                All Program Types
+              </MenuItem>
+              {types.map((t) => (
+                <MenuItem key={t.id} value={t.slug}>
+                  {t.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <CommonDateRangeSelect
+              label="Created"
+              value={createdAtRange}
+              onChange={setCreatedAtRange}
+              minWidth={240}
+              sx={{ flex: "0 1 260px", maxWidth: 260 }}
+            />
+            <CommonDateRangeSelect
+              label="Updated"
+              value={updatedAtRange}
+              onChange={setUpdatedAtRange}
+              minWidth={240}
+              sx={{ flex: "0 1 260px", maxWidth: 260 }}
+            />
+          </Box>
         </Box>
 
         <CommonTable
           columns={tableColumns}
-          data={courses.map(c => ({
+          data={courses.map((c, idx) => ({
             ...c,
+            rowNumber:
+              sortCol === 'rowNumber'
+                ? (String(sortDir).toLowerCase() === 'asc'
+                  ? page * rowsPerPage + idx + 1
+                  : Math.max(0, total - (page * rowsPerPage + idx)))
+                : Math.max(0, total - (page * rowsPerPage + idx)),
             start_date: c.start_date ? c.start_date.slice(0, 10) : "",
-            owner: c?.owner?.name || "",
+            owner:
+              c?.owner?.name ||
+              (Array.isArray(c?.owners) && c.owners.length > 0
+                ? (universities.find((u) => Number(u.id) === Number(c.owners[0]))?.name || "")
+                : ""),
             weeks_to_complete: c?.weeks_to_complete ? `${c?.weeks_to_complete}` : "",
             createdAt: c?.createdAt
               ? new Date(c?.createdAt).toLocaleDateString("en-US", {
