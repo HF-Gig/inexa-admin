@@ -184,6 +184,7 @@ const CourseForm = ({ mode = "add", page }) => {
 
 
                 transformed.short_description = normalizeShortDescription(data.short_description);
+                transformed.full_description = normalizeShortDescription(data.full_description);
                 setInitial(transformed);
                 // Set image preview if image_url exists
                 if (data.image_url) {
@@ -1131,24 +1132,24 @@ const CourseForm = ({ mode = "add", page }) => {
                                 <Grid item xs={12}>
                                     <CommonTextEditor
                                         label="Course Overview"
-                                        value={values.short_description}
-                                        onChange={val => setFieldValue("short_description", !val || val === "null" ? "" : val)}
+                                        value={values.full_description}
+                                        onChange={val => setFieldValue("full_description", !val || val === "null" ? "" : val)}
                                         mode={mode}
                                         required
                                         placeholder="Enter overview..."
-                                        error={touched.short_description && errors.short_description}
-                                        helperText={touched.short_description && errors.short_description}
+                                        error={touched.full_description && errors.full_description}
+                                        helperText={touched.full_description && errors.full_description}
                                     />
                                 </Grid>
                                 <Grid item xs={12}>
                                     <CommonTextEditor
                                         label="Short Description"
-                                        value={values.breakdown_description}
-                                        onChange={val => setFieldValue("breakdown_description", !val || val === "null" ? "" : val)}
+                                        value={values.short_description}
+                                        onChange={val => setFieldValue("short_description", !val || val === "null" ? "" : val)}
                                         mode={mode}
                                         required
                                         placeholder="Enter description..."
-                                        error={touched.breakdown_description && errors.breakdown_description}
+                                        error={touched.short_description && errors.short_description}
                                         helperText={touched.breakdown_description && errors.breakdown_description}
                                     />
                                 </Grid>
@@ -1639,46 +1640,46 @@ const CourseForm = ({ mode = "add", page }) => {
                                             label="First payment, then 2 additional payments (30 and 60 days)"
                                         />
                                     </Grid>
-                                {Boolean(values.payment_option_thirty_sixty) && (
-                                    <>
-                                        <Grid item xs={12} md={4}>
-                                            <CommonTextField
-                                                name="payment_first_30_60"
-                                                label="First payment"
-                                                type="number"
-                                                value={values.payment_first_30_60}
-                                                onChange={e => setFieldValue("payment_first_30_60", e.target.value)}
-                                                disabled={mode === 'view'}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} md={8}>
-                                            <CommonTextField
-                                                name="payment_secondThird_total_30_60"
-                                                label="Second+Third amount (splits equally)"
-                                                type="number"
-                                                value={paymentSecondThirdTotal3060}
-                                                onChange={(e) => {
-                                                    const rawTotal = e.target.value;
-                                                    if (rawTotal === "" || rawTotal === null || rawTotal === undefined) {
-                                                        setFieldValue("payment_second_30_60", "");
-                                                        setFieldValue("payment_third_30_60", "");
-                                                        return;
-                                                    }
-                                                    const total = Number(rawTotal);
-                                                    if (!Number.isFinite(total)) {
-                                                        setFieldValue("payment_second_30_60", "");
-                                                        setFieldValue("payment_third_30_60", "");
-                                                        return;
-                                                    }
-                                                    const each = Math.round((total / 2) * 100) / 100;
-                                                    setFieldValue("payment_second_30_60", each);
-                                                    setFieldValue("payment_third_30_60", each);
-                                                }}
-                                                disabled={mode === 'view'}
-                                            />
-                                        </Grid>
-                                    </>
-                                )}
+                                    {Boolean(values.payment_option_thirty_sixty) && (
+                                        <>
+                                            <Grid item xs={12} md={4}>
+                                                <CommonTextField
+                                                    name="payment_first_30_60"
+                                                    label="First payment"
+                                                    type="number"
+                                                    value={values.payment_first_30_60}
+                                                    onChange={e => setFieldValue("payment_first_30_60", e.target.value)}
+                                                    disabled={mode === 'view'}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} md={8}>
+                                                <CommonTextField
+                                                    name="payment_secondThird_total_30_60"
+                                                    label="Second+Third amount (splits equally)"
+                                                    type="number"
+                                                    value={paymentSecondThirdTotal3060}
+                                                    onChange={(e) => {
+                                                        const rawTotal = e.target.value;
+                                                        if (rawTotal === "" || rawTotal === null || rawTotal === undefined) {
+                                                            setFieldValue("payment_second_30_60", "");
+                                                            setFieldValue("payment_third_30_60", "");
+                                                            return;
+                                                        }
+                                                        const total = Number(rawTotal);
+                                                        if (!Number.isFinite(total)) {
+                                                            setFieldValue("payment_second_30_60", "");
+                                                            setFieldValue("payment_third_30_60", "");
+                                                            return;
+                                                        }
+                                                        const each = Math.round((total / 2) * 100) / 100;
+                                                        setFieldValue("payment_second_30_60", each);
+                                                        setFieldValue("payment_third_30_60", each);
+                                                    }}
+                                                    disabled={mode === 'view'}
+                                                />
+                                            </Grid>
+                                        </>
+                                    )}
                                     <Grid item xs={12}>
                                         <FormControlLabel
                                             control={
@@ -1691,18 +1692,18 @@ const CourseForm = ({ mode = "add", page }) => {
                                             label="First payment, then monthly payments (11 months)"
                                         />
                                     </Grid>
-                                {Boolean(values.payment_option_monthly_11) && (
-                                    <Grid item xs={12} md={6}>
-                                        <CommonTextField
-                                            name="payment_first_monthly_11"
-                                            label="First payment"
-                                            type="number"
-                                            value={values.payment_first_monthly_11}
-                                            onChange={e => setFieldValue("payment_first_monthly_11", e.target.value)}
-                                            disabled={mode === 'view'}
-                                        />
-                                    </Grid>
-                                )}
+                                    {Boolean(values.payment_option_monthly_11) && (
+                                        <Grid item xs={12} md={6}>
+                                            <CommonTextField
+                                                name="payment_first_monthly_11"
+                                                label="First payment"
+                                                type="number"
+                                                value={values.payment_first_monthly_11}
+                                                onChange={e => setFieldValue("payment_first_monthly_11", e.target.value)}
+                                                disabled={mode === 'view'}
+                                            />
+                                        </Grid>
+                                    )}
                                     <Grid item xs={12}>
                                         <FormControlLabel
                                             control={
@@ -1715,18 +1716,18 @@ const CourseForm = ({ mode = "add", page }) => {
                                             label="First payment, then 3 quarterly payments"
                                         />
                                     </Grid>
-                                {Boolean(values.payment_option_quarterly_3) && (
-                                    <Grid item xs={12} md={6}>
-                                        <CommonTextField
-                                            name="payment_first_quarterly_3"
-                                            label="First payment"
-                                            type="number"
-                                            value={values.payment_first_quarterly_3}
-                                            onChange={e => setFieldValue("payment_first_quarterly_3", e.target.value)}
-                                            disabled={mode === 'view'}
-                                        />
-                                    </Grid>
-                                )}
+                                    {Boolean(values.payment_option_quarterly_3) && (
+                                        <Grid item xs={12} md={6}>
+                                            <CommonTextField
+                                                name="payment_first_quarterly_3"
+                                                label="First payment"
+                                                type="number"
+                                                value={values.payment_first_quarterly_3}
+                                                onChange={e => setFieldValue("payment_first_quarterly_3", e.target.value)}
+                                                disabled={mode === 'view'}
+                                            />
+                                        </Grid>
+                                    )}
                                 </>
                                 )}
                                 {/* Legacy first/quarterly pricing inputs removed; using subscription options above */}
