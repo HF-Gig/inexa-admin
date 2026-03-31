@@ -80,13 +80,9 @@ const Costs = () => {
         setErrorMessage("");
 
         try {
-            const splitTotal3060Raw = values.paymentSecondThirdTotal3060;
-            const splitTotal3060 = splitTotal3060Raw === "" || splitTotal3060Raw === null || splitTotal3060Raw === undefined
+            const secondAndThird3060 = values.paymentSecondThird3060 === "" || values.paymentSecondThird3060 === null || values.paymentSecondThird3060 === undefined
                 ? ""
-                : Number(splitTotal3060Raw);
-            const splitEach3060 = splitTotal3060 === "" || !Number.isFinite(splitTotal3060)
-                ? ""
-                : Math.round((splitTotal3060 / 2) * 100) / 100;
+                : Number(values.paymentSecondThird3060);
 
             const commonPayload = {
                 providerId: values.providerId,
@@ -101,8 +97,8 @@ const Costs = () => {
                 paymentOnceOffAmount: values.paymentOnceOffAmount,
                 paymentFirst3060: values.paymentFirst3060,
                 // Admin inputs a combined amount; we split equally for day 30 and day 60.
-                paymentSecond3060: splitEach3060,
-                paymentThird3060: splitEach3060,
+                paymentSecond3060: secondAndThird3060,
+                paymentThird3060: secondAndThird3060,
                 paymentFirstMonthly11: values.paymentFirstMonthly11,
                 paymentFirstQuarterly3: values.paymentFirstQuarterly3,
             };
@@ -200,15 +196,7 @@ const Costs = () => {
         paymentOptionQuarterly3: commonConfig?.payment_option_quarterly_3 ?? true,
         paymentOnceOffAmount: commonConfig?.payment_once_off_amount ?? "",
         paymentFirst3060: commonConfig?.payment_first_30_60 ?? "",
-        paymentSecondThirdTotal3060: (() => {
-            const second = commonConfig?.payment_second_30_60;
-            const third = commonConfig?.payment_third_30_60;
-            const hasSecond = second !== undefined && second !== null && second !== "";
-            const hasThird = third !== undefined && third !== null && third !== "";
-            if (!hasSecond || !hasThird) return "";
-            const total = Number(second) + Number(third);
-            return Number.isFinite(total) ? total : "";
-        })(),
+        paymentSecondThird3060: commonConfig?.payment_second_30_60 ?? "",
         paymentFirstMonthly11: commonConfig?.payment_first_monthly_11 ?? "",
         paymentFirstQuarterly3: commonConfig?.payment_first_quarterly_3 ?? "",
     };
@@ -265,7 +253,7 @@ const Costs = () => {
         paymentOptionQuarterly3: Yup.boolean().required(),
         paymentOnceOffAmount: Yup.number().typeError("Must be a number").nullable(),
         paymentFirst3060: Yup.number().typeError("Must be a number").nullable(),
-        paymentSecondThirdTotal3060: Yup.number().typeError("Must be a number").nullable(),
+        paymentSecondThird3060: Yup.number().typeError("Must be a number").nullable(),
         paymentFirstMonthly11: Yup.number().typeError("Must be a number").nullable(),
         paymentFirstQuarterly3: Yup.number().typeError("Must be a number").nullable(),
     });
@@ -345,303 +333,303 @@ const Costs = () => {
                 <Box mt="20px" p="20px" border="1px solid #ddd" borderRadius="8px">
                     <Typography variant="h5" mb="20px">{editingRow ? "Edit Cost Configuration" : "Create Cost Configuration"}</Typography>
                     <Formik
-                    onSubmit={handleFormSubmit}
-                    initialValues={initialValues}
-                    validationSchema={checkoutSchema}
-                    enableReinitialize
-                >
-                    {({
-                        values,
-                        errors,
-                        touched,
-                        handleBlur,
-                        handleChange,
-                        handleSubmit,
-                        setFieldValue,
-                        isSubmitting,
-                    }) => (
-                        <form onSubmit={handleSubmit}>
-                            <Typography variant="h6" mb="12px">1) Provider and Country Costs</Typography>
-                            <Box
-                                display="grid"
-                                gap="20px"
-                                gridTemplateColumns="repeat(4, minmax(0, 1fr))"
-                                sx={{
-                                    "& > div": { gridColumn: isNonMobile ? undefined : "span 4" },
-                                }}
-                            >
-                                <FormControl fullWidth sx={{ gridColumn: "span 4" }}>
-                                    <InputLabel id="provider-select-label">Provider</InputLabel>
-                                    <Select
-                                        labelId="provider-select-label"
-                                        id="providerId"
-                                        name="providerId"
-                                        value={values.providerId}
-                                        label="Provider"
-                                        onChange={handleChange}
-                                        onBlur={handleBlur}
-                                        error={!!touched.providerId && !!errors.providerId}
-                                    >
-                                        <MenuItem value={1}>Edx (ID: 1)</MenuItem>
-                                        <MenuItem value={7}>Inexa (ID: 7)</MenuItem>
-                                    </Select>
-                                </FormControl>
-                                <FieldArray name="countryCosts">
-                                    {({ push, remove }) => (
-                                        <Box sx={{ gridColumn: "span 4" }}>
-                                            {values.countryCosts.map((entry, idx) => (
-                                                <Box
-                                                    key={idx}
-                                                    display="grid"
-                                                    gap="20px"
-                                                    gridTemplateColumns="repeat(4, minmax(0, 1fr))"
-                                                    sx={{ mb: 2 }}
-                                                >
-                                                    <FormControl fullWidth sx={{ gridColumn: "span 2" }}>
-                                                        <InputLabel id={`country-select-label-${idx}`}>Country (optional)</InputLabel>
-                                                        <Select
-                                                            labelId={`country-select-label-${idx}`}
-                                                            name={`countryCosts.${idx}.countryCode`}
-                                                            value={entry.countryCode}
-                                                            label="Country (optional)"
-                                                            onChange={handleChange}
-                                                            onBlur={handleBlur}
-                                                        >
-                                                            <MenuItem value="">Default (All Countries)</MenuItem>
-                                                            {countries.map((country) => (
-                                                                <MenuItem key={country.iso} value={country.iso}>
-                                                                    {country.country} ({country.iso})
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
-                                                    <TextField
-                                                        fullWidth
-                                                        variant="filled"
-                                                        type="number"
-                                                        label="Interactive Cost"
-                                                        onBlur={handleBlur}
-                                                        onChange={handleChange}
-                                                        value={entry.interactiveCost}
-                                                        name={`countryCosts.${idx}.interactiveCost`}
-                                                        sx={{ gridColumn: "span 1" }}
-                                                    />
-                                                    <TextField
-                                                        fullWidth
-                                                        variant="filled"
-                                                        type="number"
-                                                        label="Self Cost"
-                                                        onBlur={handleBlur}
-                                                        onChange={handleChange}
-                                                        value={entry.selfCost}
-                                                        name={`countryCosts.${idx}.selfCost`}
-                                                        sx={{ gridColumn: "span 1" }}
-                                                    />
-                                                    {idx > 0 && (
-                                                        <Box sx={{ gridColumn: "span 4" }}>
-                                                            <Button color="error" variant="text" onClick={() => remove(idx)}>
-                                                                Remove
-                                                            </Button>
-                                                        </Box>
-                                                    )}
-                                                </Box>
-                                            ))}
-                                            <Button
-                                                type="button"
-                                                variant="outlined"
-                                                startIcon={<AddCircleOutlineIcon />}
-                                                onClick={() => push({ countryCode: "", interactiveCost: "", selfCost: "" })}
-                                            >
-                                                Add
-                                            </Button>
-                                        </Box>
-                                    )}
-                                </FieldArray>
-                            </Box>
-
-                            <Divider sx={{ my: 3 }} />
-                            <Typography variant="h6" mb="12px">2) Subscription Payment Options</Typography>
-                            <Typography variant="body2" sx={{ color: colors.gray[100], mb: 2 }}>
-                                All options are enabled by default for edX courses.
-                            </Typography>
-                            <FormGroup>
-                                <Box mb={2}>
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={Boolean(values.paymentOptionOnceOff)}
-                                                onChange={(e) => setFieldValue("paymentOptionOnceOff", e.target.checked)}
-                                            />
-                                        }
-                                        label="Once-off payment of $1190"
-                                    />
-                                </Box>
-
-                                <Box mb={2}>
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={Boolean(values.paymentOptionThirtySixty)}
-                                                onChange={(e) => setFieldValue("paymentOptionThirtySixty", e.target.checked)}
-                                            />
-                                        }
-                                        label="First payment (custom amount), then 2 additional payments over 30 and 60 days"
-                                    />
-                                    {Boolean(values.paymentOptionThirtySixty) && (
-                                        <Box pl={4} pt={1} display="grid" gap="12px" gridTemplateColumns="repeat(2, minmax(0, 1fr))">
-                                            <TextField
-                                                fullWidth
-                                                variant="filled"
-                                                type="number"
-                                                label="First payment"
-                                                name="paymentFirst3060"
-                                                value={values.paymentFirst3060}
-                                                onBlur={handleBlur}
-                                                onChange={handleChange}
-                                            />
-                                            <TextField
-                                                fullWidth
-                                                variant="filled"
-                                                type="number"
-                                                label="Second+Third amount (splits equally)"
-                                                name="paymentSecondThirdTotal3060"
-                                                value={values.paymentSecondThirdTotal3060}
-                                                onBlur={handleBlur}
-                                                onChange={handleChange}
-                                            />
-                                        </Box>
-                                    )}
-                                </Box>
-
-                                <Box mb={2}>
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={Boolean(values.paymentOptionMonthly11)}
-                                                onChange={(e) => setFieldValue("paymentOptionMonthly11", e.target.checked)}
-                                            />
-                                        }
-                                        label="First payment (custom amount), then monthly payments for 11 months"
-                                    />
-                                    {Boolean(values.paymentOptionMonthly11) && (
-                                        <Box pl={4} pt={1}>
-                                            <TextField
-                                                fullWidth
-                                                variant="filled"
-                                                type="number"
-                                                label="Option 3 - First payment (monthly auto-adjust)"
-                                                name="paymentFirstMonthly11"
-                                                value={values.paymentFirstMonthly11}
-                                                onBlur={handleBlur}
-                                                onChange={handleChange}
-                                            />
-                                        </Box>
-                                    )}
-                                </Box>
-
-                                <Box mb={2}>
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={Boolean(values.paymentOptionQuarterly3)}
-                                                onChange={(e) => setFieldValue("paymentOptionQuarterly3", e.target.checked)}
-                                            />
-                                        }
-                                        label="First payment (custom amount), then 3 quarterly payments"
-                                    />
-                                    {Boolean(values.paymentOptionQuarterly3) && (
-                                        <Box pl={4} pt={1}>
-                                            <TextField
-                                                fullWidth
-                                                variant="filled"
-                                                type="number"
-                                                label="Option 4 - First payment (quarterly auto-adjust)"
-                                                name="paymentFirstQuarterly3"
-                                                value={values.paymentFirstQuarterly3}
-                                                onBlur={handleBlur}
-                                                onChange={handleChange}
-                                            />
-                                        </Box>
-                                    )}
-                                </Box>
-                            </FormGroup>
-
-                            <Divider sx={{ my: 3 }} />
-                            <Typography variant="h6" mb="12px">3) Common Captions and Payment Types</Typography>
-                            <Box
-                                display="grid"
-                                gap="20px"
-                                gridTemplateColumns="repeat(4, minmax(0, 1fr))"
-                                sx={{
-                                    "& > div": { gridColumn: isNonMobile ? undefined : "span 4" },
-                                }}
-                            >
-                                <TextField
-                                    fullWidth
-                                    variant="filled"
-                                    type="text"
-                                    label="Interactive Caption"
-                                    onBlur={handleBlur}
-                                    onChange={handleChange}
-                                    value={values.interactiveCaption}
-                                    name="interactiveCaption"
-                                    error={!!touched.interactiveCaption && !!errors.interactiveCaption}
-                                    helperText={touched.interactiveCaption && errors.interactiveCaption}
-                                    sx={{ gridColumn: "span 2" }}
-                                />
-                                <TextField
-                                    fullWidth
-                                    variant="filled"
-                                    type="text"
-                                    label="Self Caption"
-                                    onBlur={handleBlur}
-                                    onChange={handleChange}
-                                    value={values.selfCaption}
-                                    name="selfCaption"
-                                    helperText={touched.selfCaption && errors.selfCaption}
-                                    sx={{ gridColumn: "span 2" }}
-                                />
-                                <TextField
-                                    fullWidth
-                                    variant="filled"
-                                    type="text"
-                                    label="Self Payment Type"
-                                    onBlur={handleBlur}
-                                    onChange={handleChange}
-                                    value={values.paymentTypeSelf}
-                                    name="paymentTypeSelf"
-                                    error={!!touched.paymentTypeSelf && !!errors.paymentTypeSelf}
-                                    helperText={touched.paymentTypeSelf && errors.paymentTypeSelf}
-                                    sx={{ gridColumn: "span 2" }}
-                                />
-                                <TextField
-                                    fullWidth
-                                    variant="filled"
-                                    type="text"
-                                    label="Interactive Payment Type"
-                                    onBlur={handleBlur}
-                                    onChange={handleChange}
-                                    value={values.paymentTypeInteractive}
-                                    name="paymentTypeInteractive"
-                                    error={!!touched.paymentTypeInteractive && !!errors.paymentTypeInteractive}
-                                    helperText={touched.paymentTypeInteractive && errors.paymentTypeInteractive}
-                                    sx={{ gridColumn: "span 2" }}
-                                />
-                            </Box>
-                            <Box display="flex" justifyContent="end" gap={2} mt="20px">
-                                <Button onClick={() => { setIsCreateMode(false); setEditingRow(null); }} variant="outlined">Cancel</Button>
-                                <Button
-                                    type="submit"
-                                    color="secondary"
-                                    variant="contained"
-                                    disabled={isSubmitting}
+                        onSubmit={handleFormSubmit}
+                        initialValues={initialValues}
+                        validationSchema={checkoutSchema}
+                        enableReinitialize
+                    >
+                        {({
+                            values,
+                            errors,
+                            touched,
+                            handleBlur,
+                            handleChange,
+                            handleSubmit,
+                            setFieldValue,
+                            isSubmitting,
+                        }) => (
+                            <form onSubmit={handleSubmit}>
+                                <Typography variant="h6" mb="12px">1) Provider and Country Costs</Typography>
+                                <Box
+                                    display="grid"
+                                    gap="20px"
+                                    gridTemplateColumns="repeat(4, minmax(0, 1fr))"
+                                    sx={{
+                                        "& > div": { gridColumn: isNonMobile ? undefined : "span 4" },
+                                    }}
                                 >
-                                    {isSubmitting ? "Saving..." : (editingRow ? "Update" : "Create")}
-                                </Button>
-                            </Box>
-                        </form>
-                    )}
-                </Formik>
+                                    <FormControl fullWidth sx={{ gridColumn: "span 4" }}>
+                                        <InputLabel id="provider-select-label">Provider</InputLabel>
+                                        <Select
+                                            labelId="provider-select-label"
+                                            id="providerId"
+                                            name="providerId"
+                                            value={values.providerId}
+                                            label="Provider"
+                                            onChange={handleChange}
+                                            onBlur={handleBlur}
+                                            error={!!touched.providerId && !!errors.providerId}
+                                        >
+                                            <MenuItem value={1}>Edx (ID: 1)</MenuItem>
+                                            <MenuItem value={7}>Inexa (ID: 7)</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                    <FieldArray name="countryCosts">
+                                        {({ push, remove }) => (
+                                            <Box sx={{ gridColumn: "span 4" }}>
+                                                {values.countryCosts.map((entry, idx) => (
+                                                    <Box
+                                                        key={idx}
+                                                        display="grid"
+                                                        gap="20px"
+                                                        gridTemplateColumns="repeat(4, minmax(0, 1fr))"
+                                                        sx={{ mb: 2 }}
+                                                    >
+                                                        <FormControl fullWidth sx={{ gridColumn: "span 2" }}>
+                                                            <InputLabel id={`country-select-label-${idx}`}>Country (optional)</InputLabel>
+                                                            <Select
+                                                                labelId={`country-select-label-${idx}`}
+                                                                name={`countryCosts.${idx}.countryCode`}
+                                                                value={entry.countryCode}
+                                                                label="Country (optional)"
+                                                                onChange={handleChange}
+                                                                onBlur={handleBlur}
+                                                            >
+                                                                <MenuItem value="">Default (All Countries)</MenuItem>
+                                                                {countries.map((country) => (
+                                                                    <MenuItem key={country.iso} value={country.iso}>
+                                                                        {country.country} ({country.iso})
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
+                                                        <TextField
+                                                            fullWidth
+                                                            variant="filled"
+                                                            type="number"
+                                                            label="Interactive Cost"
+                                                            onBlur={handleBlur}
+                                                            onChange={handleChange}
+                                                            value={entry.interactiveCost}
+                                                            name={`countryCosts.${idx}.interactiveCost`}
+                                                            sx={{ gridColumn: "span 1" }}
+                                                        />
+                                                        <TextField
+                                                            fullWidth
+                                                            variant="filled"
+                                                            type="number"
+                                                            label="Self Cost"
+                                                            onBlur={handleBlur}
+                                                            onChange={handleChange}
+                                                            value={entry.selfCost}
+                                                            name={`countryCosts.${idx}.selfCost`}
+                                                            sx={{ gridColumn: "span 1" }}
+                                                        />
+                                                        {idx > 0 && (
+                                                            <Box sx={{ gridColumn: "span 4" }}>
+                                                                <Button color="error" variant="text" onClick={() => remove(idx)}>
+                                                                    Remove
+                                                                </Button>
+                                                            </Box>
+                                                        )}
+                                                    </Box>
+                                                ))}
+                                                <Button
+                                                    type="button"
+                                                    variant="outlined"
+                                                    startIcon={<AddCircleOutlineIcon />}
+                                                    onClick={() => push({ countryCode: "", interactiveCost: "", selfCost: "" })}
+                                                >
+                                                    Add
+                                                </Button>
+                                            </Box>
+                                        )}
+                                    </FieldArray>
+                                </Box>
+
+                                <Divider sx={{ my: 3 }} />
+                                <Typography variant="h6" mb="12px">2) Subscription Payment Options</Typography>
+                                <Typography variant="body2" sx={{ color: colors.gray[100], mb: 2 }}>
+                                    All options are enabled by default for edX courses.
+                                </Typography>
+                                <FormGroup>
+                                    <Box mb={2}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={Boolean(values.paymentOptionOnceOff)}
+                                                    onChange={(e) => setFieldValue("paymentOptionOnceOff", e.target.checked)}
+                                                />
+                                            }
+                                            label="Once-off payment of $1190"
+                                        />
+                                    </Box>
+
+                                    <Box mb={2}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={Boolean(values.paymentOptionThirtySixty)}
+                                                    onChange={(e) => setFieldValue("paymentOptionThirtySixty", e.target.checked)}
+                                                />
+                                            }
+                                            label="First payment (custom amount), then 2 additional payments over 30 and 60 days"
+                                        />
+                                        {Boolean(values.paymentOptionThirtySixty) && (
+                                            <Box pl={4} pt={1} display="grid" gap="12px" gridTemplateColumns="repeat(2, minmax(0, 1fr))">
+                                                <TextField
+                                                    fullWidth
+                                                    variant="filled"
+                                                    type="number"
+                                                    label="First payment"
+                                                    name="paymentFirst3060"
+                                                    value={values.paymentFirst3060}
+                                                    onBlur={handleBlur}
+                                                    onChange={handleChange}
+                                                />
+                                                <TextField
+                                                    fullWidth
+                                                    variant="filled"
+                                                    type="number"
+                                                    label="Second and Third payment amount"
+                                                    name="paymentSecondThird3060"
+                                                    value={values.paymentSecondThird3060}
+                                                    onBlur={handleBlur}
+                                                    onChange={handleChange}
+                                                />
+                                            </Box>
+                                        )}
+                                    </Box>
+
+                                    <Box mb={2}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={Boolean(values.paymentOptionMonthly11)}
+                                                    onChange={(e) => setFieldValue("paymentOptionMonthly11", e.target.checked)}
+                                                />
+                                            }
+                                            label="First payment (custom amount), then monthly payments for 11 months"
+                                        />
+                                        {Boolean(values.paymentOptionMonthly11) && (
+                                            <Box pl={4} pt={1}>
+                                                <TextField
+                                                    fullWidth
+                                                    variant="filled"
+                                                    type="number"
+                                                    label="Option 3 - First payment (monthly auto-adjust)"
+                                                    name="paymentFirstMonthly11"
+                                                    value={values.paymentFirstMonthly11}
+                                                    onBlur={handleBlur}
+                                                    onChange={handleChange}
+                                                />
+                                            </Box>
+                                        )}
+                                    </Box>
+
+                                    <Box mb={2}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={Boolean(values.paymentOptionQuarterly3)}
+                                                    onChange={(e) => setFieldValue("paymentOptionQuarterly3", e.target.checked)}
+                                                />
+                                            }
+                                            label="First payment (custom amount), then 3 quarterly payments"
+                                        />
+                                        {Boolean(values.paymentOptionQuarterly3) && (
+                                            <Box pl={4} pt={1}>
+                                                <TextField
+                                                    fullWidth
+                                                    variant="filled"
+                                                    type="number"
+                                                    label="Option 4 - First payment (quarterly auto-adjust)"
+                                                    name="paymentFirstQuarterly3"
+                                                    value={values.paymentFirstQuarterly3}
+                                                    onBlur={handleBlur}
+                                                    onChange={handleChange}
+                                                />
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </FormGroup>
+
+                                <Divider sx={{ my: 3 }} />
+                                <Typography variant="h6" mb="12px">3) Common Captions and Payment Types</Typography>
+                                <Box
+                                    display="grid"
+                                    gap="20px"
+                                    gridTemplateColumns="repeat(4, minmax(0, 1fr))"
+                                    sx={{
+                                        "& > div": { gridColumn: isNonMobile ? undefined : "span 4" },
+                                    }}
+                                >
+                                    <TextField
+                                        fullWidth
+                                        variant="filled"
+                                        type="text"
+                                        label="Interactive Caption"
+                                        onBlur={handleBlur}
+                                        onChange={handleChange}
+                                        value={values.interactiveCaption}
+                                        name="interactiveCaption"
+                                        error={!!touched.interactiveCaption && !!errors.interactiveCaption}
+                                        helperText={touched.interactiveCaption && errors.interactiveCaption}
+                                        sx={{ gridColumn: "span 2" }}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        variant="filled"
+                                        type="text"
+                                        label="Self Caption"
+                                        onBlur={handleBlur}
+                                        onChange={handleChange}
+                                        value={values.selfCaption}
+                                        name="selfCaption"
+                                        helperText={touched.selfCaption && errors.selfCaption}
+                                        sx={{ gridColumn: "span 2" }}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        variant="filled"
+                                        type="text"
+                                        label="Self Payment Type"
+                                        onBlur={handleBlur}
+                                        onChange={handleChange}
+                                        value={values.paymentTypeSelf}
+                                        name="paymentTypeSelf"
+                                        error={!!touched.paymentTypeSelf && !!errors.paymentTypeSelf}
+                                        helperText={touched.paymentTypeSelf && errors.paymentTypeSelf}
+                                        sx={{ gridColumn: "span 2" }}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        variant="filled"
+                                        type="text"
+                                        label="Interactive Payment Type"
+                                        onBlur={handleBlur}
+                                        onChange={handleChange}
+                                        value={values.paymentTypeInteractive}
+                                        name="paymentTypeInteractive"
+                                        error={!!touched.paymentTypeInteractive && !!errors.paymentTypeInteractive}
+                                        helperText={touched.paymentTypeInteractive && errors.paymentTypeInteractive}
+                                        sx={{ gridColumn: "span 2" }}
+                                    />
+                                </Box>
+                                <Box display="flex" justifyContent="end" gap={2} mt="20px">
+                                    <Button onClick={() => { setIsCreateMode(false); setEditingRow(null); }} variant="outlined">Cancel</Button>
+                                    <Button
+                                        type="submit"
+                                        color="secondary"
+                                        variant="contained"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? "Saving..." : (editingRow ? "Update" : "Create")}
+                                    </Button>
+                                </Box>
+                            </form>
+                        )}
+                    </Formik>
                 </Box>
             )}
         </Box>
