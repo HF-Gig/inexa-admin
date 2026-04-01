@@ -122,6 +122,11 @@ const CourseForm = ({ mode = "add", page }) => {
                     payment_third_30_60: data.payment_third_30_60 ?? "",
                     payment_first_monthly_11: data.payment_first_monthly_11 ?? "",
                     payment_first_quarterly_3: data.payment_first_quarterly_3 ?? "",
+                    program_card_title: (data.program_card_title && data.program_card_title !== "null") ? data.program_card_title : "Inexa's Designed Interactive Learning Experiences",
+                    program_card_subtitle: (data.program_card_subtitle && data.program_card_subtitle !== "null") ? data.program_card_subtitle : "Fully interactive learning experiences where you will interact with your peers, Inexa's instructors, and support agents.",
+                    program_card_bullets: (data.program_card_bullets && data.program_card_bullets !== "null") ? data.program_card_bullets : "Fully interactive learning experiences.\nSpecialized inexa facilitators.\nImpactful learning journeys.\nCost-effective programs.\nReal-World Practical Application.\nTailored programs for enterprises.",
+                    program_card_caption: (data.program_card_caption && data.program_card_caption !== "null") ? data.program_card_caption : (data.interactive_caption && data.interactive_caption !== "null" ? data.interactive_caption : ""),
+                    program_card_info_url: (data.program_card_info_url && data.program_card_info_url !== "null") ? data.program_card_info_url : "",
 
                     card_short: data.card_short,
                     admission_steps: data.admission_steps,
@@ -644,17 +649,7 @@ const CourseForm = ({ mode = "add", page }) => {
                         }
                     }, [values.isCobranding, setFieldValue]);
 
-                    const paymentSecondThirdTotal3060 = (() => {
-                        const second = values.payment_second_30_60;
-                        const third = values.payment_third_30_60;
-                        const secondEmpty = second === "" || second === null || second === undefined;
-                        const thirdEmpty = third === "" || third === null || third === undefined;
-                        if (secondEmpty && thirdEmpty) return "";
-                        const n2 = secondEmpty ? 0 : Number(second);
-                        const n3 = thirdEmpty ? 0 : Number(third);
-                        const total = n2 + n3;
-                        return Number.isFinite(total) ? total : "";
-                    })();
+
 
                     return (
                         <Form>
@@ -1625,7 +1620,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                                     disabled={mode === 'view'}
                                                 />
                                             }
-                                            label="Once-off payment of $1190"
+                                            label={`Once-off payment of $${values.interactive_cost || 1190}`}
                                         />
                                     </Grid>
                                     <Grid item xs={12}>
@@ -1642,39 +1637,31 @@ const CourseForm = ({ mode = "add", page }) => {
                                     </Grid>
                                     {Boolean(values.payment_option_thirty_sixty) && (
                                         <>
-                                            <Grid item xs={12} md={4}>
+                                            <Grid item xs={12} md={6}>
                                                 <CommonTextField
                                                     name="payment_first_30_60"
                                                     label="First payment"
                                                     type="number"
                                                     value={values.payment_first_30_60}
                                                     onChange={e => setFieldValue("payment_first_30_60", e.target.value)}
+                                                    error={touched.payment_first_30_60 && Boolean(errors.payment_first_30_60)}
+                                                    helperText={touched.payment_first_30_60 && errors.payment_first_30_60}
                                                     disabled={mode === 'view'}
                                                 />
                                             </Grid>
-                                            <Grid item xs={12} md={8}>
+                                            <Grid item xs={12} md={6}>
                                                 <CommonTextField
-                                                    name="payment_secondThird_total_30_60"
-                                                    label="Second+Third amount (splits equally)"
+                                                    name="payment_second_30_60"
+                                                    label="Second and Third amount"
                                                     type="number"
-                                                    value={paymentSecondThirdTotal3060}
+                                                    value={values.payment_second_30_60}
                                                     onChange={(e) => {
-                                                        const rawTotal = e.target.value;
-                                                        if (rawTotal === "" || rawTotal === null || rawTotal === undefined) {
-                                                            setFieldValue("payment_second_30_60", "");
-                                                            setFieldValue("payment_third_30_60", "");
-                                                            return;
-                                                        }
-                                                        const total = Number(rawTotal);
-                                                        if (!Number.isFinite(total)) {
-                                                            setFieldValue("payment_second_30_60", "");
-                                                            setFieldValue("payment_third_30_60", "");
-                                                            return;
-                                                        }
-                                                        const each = Math.round((total / 2) * 100) / 100;
-                                                        setFieldValue("payment_second_30_60", each);
-                                                        setFieldValue("payment_third_30_60", each);
+                                                        const val = e.target.value;
+                                                        setFieldValue("payment_second_30_60", val);
+                                                        setFieldValue("payment_third_30_60", val);
                                                     }}
+                                                    error={touched.payment_second_30_60 && Boolean(errors.payment_second_30_60)}
+                                                    helperText={touched.payment_second_30_60 && errors.payment_second_30_60}
                                                     disabled={mode === 'view'}
                                                 />
                                             </Grid>
@@ -1700,6 +1687,8 @@ const CourseForm = ({ mode = "add", page }) => {
                                                 type="number"
                                                 value={values.payment_first_monthly_11}
                                                 onChange={e => setFieldValue("payment_first_monthly_11", e.target.value)}
+                                                error={touched.payment_first_monthly_11 && Boolean(errors.payment_first_monthly_11)}
+                                                helperText={touched.payment_first_monthly_11 && errors.payment_first_monthly_11}
                                                 disabled={mode === 'view'}
                                             />
                                         </Grid>
@@ -1724,6 +1713,8 @@ const CourseForm = ({ mode = "add", page }) => {
                                                 type="number"
                                                 value={values.payment_first_quarterly_3}
                                                 onChange={e => setFieldValue("payment_first_quarterly_3", e.target.value)}
+                                                error={touched.payment_first_quarterly_3 && Boolean(errors.payment_first_quarterly_3)}
+                                                helperText={touched.payment_first_quarterly_3 && errors.payment_first_quarterly_3}
                                                 disabled={mode === 'view'}
                                             />
                                         </Grid>

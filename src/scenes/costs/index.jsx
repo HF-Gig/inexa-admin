@@ -56,19 +56,21 @@ const Costs = () => {
     }, [selectedProvider]);
 
     const groupedRows = Object.values(
-        rows.reduce((acc, row) => {
-            const providerKey = String(row.provider_id);
-            if (!acc[providerKey]) {
-                acc[providerKey] = {
-                    provider_id: row.provider_id,
-                    ids: [],
-                    countries: [],
-                };
-            }
-            acc[providerKey].ids.push(row.id);
-            acc[providerKey].countries.push(row.country_code === "DEFAULT" ? "Default (All)" : row.country_code);
-            return acc;
-        }, {})
+        rows
+            .filter((row) => row.course_id === null)
+            .reduce((acc, row) => {
+                const providerKey = String(row.provider_id);
+                if (!acc[providerKey]) {
+                    acc[providerKey] = {
+                        provider_id: row.provider_id,
+                        ids: [],
+                        countries: [],
+                    };
+                }
+                acc[providerKey].ids.push(row.id);
+                acc[providerKey].countries.push(row.country_code === "DEFAULT" ? "Default (All)" : row.country_code);
+                return acc;
+            }, {})
     ).map((group) => ({
         ...group,
         total_countries: group.countries.length,
@@ -166,8 +168,8 @@ const Costs = () => {
 
     const commonConfig =
         editingRow?.commonConfig ||
-        rows.find((row) => row.country_code === "DEFAULT") ||
-        rows[0] ||
+        rows.find((row) => row.country_code === "DEFAULT" && row.course_id === null) ||
+        rows.find((row) => row.course_id === null) ||
         null;
 
     const initialValues = {
@@ -202,7 +204,7 @@ const Costs = () => {
     };
 
     const handleEdit = (row) => {
-        const providerRows = rows.filter((r) => Number(r.provider_id) === Number(row.provider_id));
+        const providerRows = rows.filter((r) => Number(r.provider_id) === Number(row.provider_id) && r.course_id === null);
         const defaultRow = providerRows.find((r) => r.country_code === "DEFAULT");
         const common = defaultRow || providerRows[0] || null;
         setEditingRow({

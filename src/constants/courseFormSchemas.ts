@@ -53,9 +53,9 @@ export const baseInitialValues = {
   disclaimer: false,
   course_snapshot: "",
   isCobranding: true,
-  program_card_title: "",
-  program_card_subtitle: "",
-  program_card_bullets: "",
+  program_card_title: "Inexa's Designed Interactive Learning Experiences",
+  program_card_subtitle: "Fully interactive learning experiences where you will interact with your peers, Inexa's instructors, and support agents.",
+  program_card_bullets: "Fully interactive learning experiences.\nSpecialized inexa facilitators.\nImpactful learning journeys.\nCost-effective programs.\nReal-World Practical Application.\nTailored programs for enterprises.",
   program_card_caption: "",
   program_card_info_url: "",
 };
@@ -117,11 +117,70 @@ export const baseValidation = {
   payment_option_thirty_sixty: Yup.boolean().nullable(),
   payment_option_monthly_11: Yup.boolean().nullable(),
   payment_option_quarterly_3: Yup.boolean().nullable(),
-  payment_first_30_60: Yup.number().nullable(),
-  payment_second_30_60: Yup.number().nullable(),
-  payment_third_30_60: Yup.number().nullable(),
-  payment_first_monthly_11: Yup.number().nullable(),
-  payment_first_quarterly_3: Yup.number().nullable(),
+  payment_first_30_60: Yup.number().nullable().test(
+    "check-total",
+    "Total payments cannot exceed Interactive Cost",
+    function (value) {
+      const { payment_option_thirty_sixty, payment_second_30_60, payment_third_30_60, interactive_cost, provider } = this.parent || {};
+      const providerName = provider?.name || provider || "";
+      if (typeof providerName !== "string" || providerName.toLowerCase() !== "inexa") return true;
+      if (!payment_option_thirty_sixty || !interactive_cost) return true;
+      const first = Number(value) || 0;
+      const second = Number(payment_second_30_60) || 0;
+      const third = Number(payment_third_30_60) || 0;
+      return (first + second + third) <= Number(interactive_cost);
+    }
+  ),
+  payment_second_30_60: Yup.number().nullable().test(
+    "check-total",
+    "Total payments cannot exceed Interactive Cost",
+    function (value) {
+      const { payment_option_thirty_sixty, payment_first_30_60, payment_third_30_60, interactive_cost, provider } = this.parent || {};
+      const providerName = provider?.name || provider || "";
+      if (typeof providerName !== "string" || providerName.toLowerCase() !== "inexa") return true;
+      if (!payment_option_thirty_sixty || !interactive_cost) return true;
+      const first = Number(payment_first_30_60) || 0;
+      const second = Number(value) || 0;
+      const third = Number(payment_third_30_60) || 0;
+      return (first + second + third) <= Number(interactive_cost);
+    }
+  ),
+  payment_third_30_60: Yup.number().nullable().test(
+    "check-total",
+    "Total payments cannot exceed Interactive Cost",
+    function (value) {
+      const { payment_option_thirty_sixty, payment_first_30_60, payment_second_30_60, interactive_cost, provider } = this.parent || {};
+      const providerName = provider?.name || provider || "";
+      if (typeof providerName !== "string" || providerName.toLowerCase() !== "inexa") return true;
+      if (!payment_option_thirty_sixty || !interactive_cost) return true;
+      const first = Number(payment_first_30_60) || 0;
+      const second = Number(payment_second_30_60) || 0;
+      const third = Number(value) || 0;
+      return (first + second + third) <= Number(interactive_cost);
+    }
+  ),
+  payment_first_monthly_11: Yup.number().nullable().test(
+    "check-max",
+    "First payment cannot exceed Interactive Cost",
+    function (value) {
+      const { payment_option_monthly_11, interactive_cost, provider } = this.parent || {};
+      const providerName = provider?.name || provider || "";
+      if (typeof providerName !== "string" || providerName.toLowerCase() !== "inexa") return true;
+      if (!payment_option_monthly_11 || !interactive_cost) return true;
+      return (Number(value) || 0) <= Number(interactive_cost);
+    }
+  ),
+  payment_first_quarterly_3: Yup.number().nullable().test(
+    "check-max",
+    "First payment cannot exceed Interactive Cost",
+    function (value) {
+      const { payment_option_quarterly_3, interactive_cost, provider } = this.parent || {};
+      const providerName = provider?.name || provider || "";
+      if (typeof providerName !== "string" || providerName.toLowerCase() !== "inexa") return true;
+      if (!payment_option_quarterly_3 || !interactive_cost) return true;
+      return (Number(value) || 0) <= Number(interactive_cost);
+    }
+  ),
   program_card_title: Yup.string().nullable(),
   program_card_subtitle: Yup.string().nullable(),
   program_card_bullets: Yup.string().nullable(),

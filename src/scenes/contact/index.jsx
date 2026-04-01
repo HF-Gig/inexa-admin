@@ -29,12 +29,12 @@ const Contact = () => {
 
   useEffect(() => {
     fetchForms();
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, statusFilter]);
 
   const fetchForms = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/contact/get-forms?page=${page + 1}&page_size=${rowsPerPage}`);
+      const res = await api.get(`/contact/get-forms?page=${page + 1}&page_size=${rowsPerPage}${statusFilter ? `&status=${statusFilter}` : ''}`);
       setContacts(res.data.data || []);
       setTotal(res.data.pagination?.totalItems || 0);
     } catch (error) {
@@ -82,12 +82,6 @@ const Contact = () => {
     }
   };
 
-  // 🔥 Filter contacts by selected status
-  const filteredContacts =
-    statusFilter === ''
-      ? contacts
-      : contacts.filter((c) => c.status === statusFilter);
-
   return (
     <Box>
       <Header title="Contacts" />
@@ -111,7 +105,7 @@ const Contact = () => {
 
       <CommonTable
         columns={[
-          { name: 'id', label: 'ID' },
+          { name: 'id', label: 'No.', render: (row, index) => page * rowsPerPage + index + 1 },
           { name: 'name', label: 'Name' },
           { name: 'email', label: 'Email' },
           { name: 'phone', label: 'Phone' },
@@ -150,7 +144,7 @@ const Contact = () => {
             render: (row) => new Date(row.create_time).toLocaleString(),
           },
         ]}
-        data={filteredContacts} // 👈 filtered data
+        data={contacts} // 👈 filtered by backend
         total={total}
         page={page}
         rowsPerPage={rowsPerPage}
