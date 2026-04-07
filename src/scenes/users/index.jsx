@@ -17,7 +17,17 @@ import {
   MenuItem,
   Autocomplete,
 } from "@mui/material";
-import { Edit, Delete, Add, Visibility, VisibilityOff, CheckCircle, Error } from "@mui/icons-material";
+import {
+  Edit,
+  Delete,
+  Add,
+  Visibility,
+  VisibilityOff,
+  CheckCircle,
+  Error,
+  FileDownload,
+  Description,
+} from "@mui/icons-material";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { countries } from 'countries-list';
@@ -51,6 +61,11 @@ const Users = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [documentPreview, setDocumentPreview] = useState({
+    open: false,
+    url: "",
+    name: "",
+  });
 
   // Validation schema
   const UserSchema = Yup.object().shape({
@@ -148,6 +163,89 @@ const Users = () => {
       setSnackbar({
         open: true,
         message: "Failed to delete user",
+        severity: "error",
+      });
+    }
+  };
+
+  const getUserDocumentPath = (user) =>
+    user?.government_id || user?.document || user?.documents || "";
+
+  const resolveDocumentUrl = (docPath) => {
+    if (!docPath) return "";
+
+    const normalizedPath = String(docPath).trim().replace(/\\/g, "/");
+    if (/^https?:\/\//i.test(normalizedPath)) return normalizedPath;
+
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || "";
+      const baseForJoin = apiBase.endsWith("/") ? apiBase : `${apiBase}/`;
+      return new URL(
+        normalizedPath.startsWith("/") ? normalizedPath.slice(1) : normalizedPath,
+        baseForJoin
+      ).toString();
+    } catch (error) {
+      return normalizedPath.startsWith("/") ? normalizedPath : `/${normalizedPath}`;
+    }
+  };
+
+  const getDocumentFileName = (docUrl) => {
+    if (!docUrl) return "document";
+    const cleanUrl = docUrl.split("?")[0];
+    return cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1) || "document";
+  };
+
+  const handleViewDocument = (user) => {
+    const docPath = getUserDocumentPath(user);
+    const docUrl = resolveDocumentUrl(docPath);
+    if (!docUrl) {
+      setSnackbar({
+        open: true,
+        message: "No document available for this learner",
+        severity: "warning",
+      });
+      return;
+    }
+    setDocumentPreview({
+      open: true,
+      url: docUrl,
+      name: getDocumentFileName(docUrl),
+    });
+  };
+
+  const handleDownloadDocument = async (user) => {
+    const docPath = getUserDocumentPath(user);
+    const docUrl = resolveDocumentUrl(docPath);
+    if (!docUrl) {
+      setSnackbar({
+        open: true,
+        message: "No document available for this learner",
+        severity: "warning",
+      });
+      return;
+    }
+
+    try {
+      const response = await api.get(docUrl, { responseType: "blob" });
+      const blob = new Blob([response.data]);
+      const objectUrl = window.URL.createObjectURL(blob);
+
+      const headerName = response.headers?.["content-disposition"];
+      const matchedName = headerName?.match(/filename\*?=(?:UTF-8'')?"?([^\";]+)"?/i)?.[1];
+      const filename = decodeURIComponent(matchedName || getDocumentFileName(docUrl));
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to download document",
         severity: "error",
       });
     }
@@ -302,11 +400,38 @@ const Users = () => {
 
       <CommonTable
         columns={[
-          { name: "id", label: "ID" },
+          // { name: "id", label: "ID" },
+           { 
+            name: "id", 
+            label: "ID",
+            render: (row, index) => page * rowsPerPage + index + 1
+          },
           { name: "name", label: "Name" },
           { name: "email", label: "Email" },
           { name: "country", label: "Country" },
           { name: "phone", label: "Phone" },
+          {
+            name: "documents",
+            label: "Documents",
+            sortable: false,
+            render: (row) => {
+              const hasDocument = Boolean(getUserDocumentPath(row));
+              return (
+                <Box display="flex" justifyContent="center" alignItems="center">
+                  <IconButton
+                    onClick={() => hasDocument && handleViewDocument(row)}
+                    title={hasDocument ? "View Document" : "No Document"}
+                    disabled={!hasDocument}
+                    sx={{
+                      color: hasDocument ? "#1976d2" : "#9e9e9e",
+                    }}
+                  >
+                    {hasDocument ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
+                  </IconButton>
+                </Box>
+              );
+            },
+          },
         ]}
         data={filteredUsers || []}
         total={total}
@@ -323,6 +448,9 @@ const Users = () => {
         }}
         actions={user => (
           <Box display="flex" gap={1}>
+            <IconButton onClick={() => handleDownloadDocument(user)} title="Download Document">
+              <FileDownload fontSize="small" className="icon" sx={{ color: '#2e7d32' }} />
+            </IconButton>
             <IconButton onClick={() => handleEditUser(user)} title="Edit">
               <Edit fontSize="small" className="icon" sx={{ color: '#ff9800' }} />
             </IconButton>
@@ -332,6 +460,35 @@ const Users = () => {
           </Box>
         )}
       />
+
+      <Dialog
+        open={documentPreview.open}
+        onClose={() => setDocumentPreview({ open: false, url: "", name: "" })}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>View Document</DialogTitle>
+        <DialogContent dividers sx={{ minHeight: 500 }}>
+          {documentPreview.url ? (
+            <Box sx={{ width: "100%", minHeight: 460 }}>
+              <iframe
+                src={documentPreview.url}
+                title={documentPreview.name || "Learner document"}
+                width="100%"
+                height="460"
+                style={{ border: "none" }}
+              />
+            </Box>
+          ) : (
+            <Typography>No document to preview.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDocumentPreview({ open: false, url: "", name: "" })}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={openDialog}
