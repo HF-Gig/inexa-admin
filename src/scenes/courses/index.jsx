@@ -411,7 +411,7 @@ const Courses = ({ pageType = 'courses' }) => {
       <Paper
         elevation={4}
         sx={{
-          maxWidth: 1200,
+          maxWidth: "100%",
           mx: "auto",
           boxShadow: "none",
           background: "#fff",

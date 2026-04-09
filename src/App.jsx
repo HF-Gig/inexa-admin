@@ -29,6 +29,11 @@ function App() {
                 flexDirection: "column",
                 height: "100%",
                 maxWidth: "100%",
+                width: {
+                  xs: "100%",        // mobile
+                  sm: "100%",        // tablet
+                  md: "calc(100% - 250px)", // desktop
+                },
               }}
             >
               <Navbar currentUsername={name}/>
