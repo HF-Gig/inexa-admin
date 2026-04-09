@@ -1539,6 +1539,19 @@ const CourseForm = ({ mode = "add", page }) => {
                                         disabled={mode === 'view'}
                                     />
                                 </Grid>
+                                {isProgram &&
+                                    <Grid item xs={12} md={4}>
+                                        <CommonTextField
+                                            name="price"
+                                            label="Price"
+                                            value={values.price}
+                                            onChange={e => setFieldValue("price", e.target.value)}
+                                            error={touched.price && Boolean(errors.price)}
+                                            helperText={errors.price}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
                                 {isInexaProvider && (
                                     <Grid item xs={12}>
                                         <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 2, p: 2 }}>
