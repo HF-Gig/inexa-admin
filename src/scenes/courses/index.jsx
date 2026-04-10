@@ -217,6 +217,7 @@ const Courses = ({ pageType = 'courses' }) => {
         sortDir,
         content_type: contentTypeMap[pageType] || 'both',
         search: debouncedSearch,
+        include_inactive: '1',
       });
       if (universityFilter) params.append('owners', universityFilter);
       if (typeFilter) params.append('program_type_slug', typeFilter);
