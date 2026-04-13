@@ -628,13 +628,14 @@ const CourseForm = ({ mode = "add", page }) => {
                         const res = await api.post(url, formData);
                         // Debug: log the response for verification
                         console.log('Course save response:', res, res?.data);
-                        if (res.status === 200) {
+                        if (res.status === 200 && res.data?.status !== false) {
                             navigate(navigatePage, { state: { toast: { message: `${isProgram ? "Program" : "Course"} ${mode === "add" ? "added" : "updated"} successfully!`, severity: "success" } } });
                         } else {
-                            showToast({ message: `Failed to save ${isProgram ? "program" : "course"}. Please try again.`, severity: "error" });
+                            showToast({ message: res.data?.message || `Failed to save ${isProgram ? "program" : "course"}. Please try again.`, severity: "error" });
                         }
                     } catch (e) {
-                        showToast({ message: `Failed to save ${isProgram ? "program" : "course"}. Please try again.`, severity: "error" });
+                        const msg = e.response?.data?.message || `Failed to save ${isProgram ? "program" : "course"}. Please try again.`;
+                        showToast({ message: msg, severity: "error" });
                     } finally {
                         setSubmitting(false);
                     }
