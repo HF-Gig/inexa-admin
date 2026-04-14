@@ -41,9 +41,10 @@ const Users = () => {
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sortCol, setSortCol] = useState("id");
+  const [sortCol, setSortCol] = useState("");
   const [sortDir, setSortDir] = useState("desc");
   console.log('users :>> ', users);
   const [loading, setLoading] = useState(true);
@@ -98,15 +99,36 @@ const Users = () => {
       .required("Phone is required"),
   });
 
-  // Fetch users on component mount and when pagination changes
   useEffect(() => {
-    fetchUsers(page, rowsPerPage);
-  }, [page, rowsPerPage]);
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-  const fetchUsers = async (pageNum = 0, pageSize = 10) => {
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Fetch users on component mount and when pagination/search/sort changes
+  useEffect(() => {
+    fetchUsers(page, rowsPerPage, debouncedSearchTerm, sortCol, sortDir);
+  }, [page, rowsPerPage, debouncedSearchTerm, sortCol, sortDir]);
+
+  const fetchUsers = async (
+    pageNum = 0,
+    pageSize = 10,
+    search = "",
+    currentSortCol = "",
+    currentSortDir = "desc"
+  ) => {
     try {
       setLoading(true);
-      const response = await api.get(`/users?page=${pageNum + 1}&page_size=${pageSize}`);
+      const trimmedSearch = search.trim();
+      const searchQuery = trimmedSearch ? `&search=${encodeURIComponent(trimmedSearch)}` : "";
+      const sortQuery = currentSortCol
+        ? `&sort_by=${encodeURIComponent(currentSortCol)}&sort_dir=${encodeURIComponent(currentSortDir)}`
+        : "";
+      const response = await api.get(
+        `/users?page=${pageNum + 1}&page_size=${pageSize}${searchQuery}${sortQuery}`
+      );
       setUsers(response.data);
       setTotal(response.data.pagination?.totalItems || 0);
     } catch (error) {
@@ -290,7 +312,7 @@ const Users = () => {
       resetForm();
       setOpenDialog(false);
       // Refresh users list
-      fetchUsers();
+      fetchUsers(page, rowsPerPage, debouncedSearchTerm, sortCol, sortDir);
     } catch (error) {
       console.error("Error saving user:", error);
       setSnackbar({
@@ -306,20 +328,6 @@ const Users = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <Box
-        m="20px"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   const getDisplayName = (user) => {
     const firstName = typeof user?.first_name === "string" ? user.first_name.trim() : "";
     const lastName = typeof user?.last_name === "string" ? user.last_name.trim() : "";
@@ -327,32 +335,11 @@ const Users = () => {
     return fullName || "-";
   };
 
-  // Apply frontend filtering by name or email
-  let filteredUsers = users?.data?.filter((u) => {
-    const fullName = getDisplayName(u).toLowerCase();
-    const email = u.email?.toLowerCase() || "";
-    const term = searchTerm.toLowerCase();
-    return fullName.includes(term) || email.includes(term);
-  })
-    .map((u) => ({
+  // Keep full names available for table display
+  let filteredUsers = users?.data?.map((u) => ({
       ...u,
       name: getDisplayName(u),
     }));
-
-  // Apply frontend sorting
-  if (sortCol && filteredUsers) {
-    filteredUsers.sort((a, b) => {
-      const aVal = a[sortCol];
-      const bVal = b[sortCol];
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-      } else {
-        const aStr = String(aVal || '').toLowerCase();
-        const bStr = String(bVal || '').toLowerCase();
-        return sortDir === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
-      }
-    });
-  }
 
   return (
     <Box>
@@ -372,7 +359,10 @@ const Users = () => {
           variant="outlined"
           placeholder="Search learners..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(0);
+          }}
           sx={{
             background: "#f5f7fa",
             borderRadius: 2,
@@ -439,12 +429,16 @@ const Users = () => {
         rowsPerPage={rowsPerPage}
         loading={loading}
         onPageChange={setPage}
-        onRowsPerPageChange={(e) => setRowsPerPage(e?.target.value)}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(Number(e?.target.value) || 10);
+          setPage(0);
+        }}
         sortCol={sortCol}
         sortDir={sortDir}
         onSortChange={(col, dir) => {
-          setSortCol(col || "id");
+          setSortCol(col || "");
           setSortDir(dir);
+          setPage(0);
         }}
         actions={user => (
           <Box display="flex" gap={1}>
