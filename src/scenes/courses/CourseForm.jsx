@@ -72,7 +72,7 @@ const CourseForm = ({ mode = "add", page }) => {
     const [deleteCountryCostRow, setDeleteCountryCostRow] = useState(null);
     const [countryCostForm, setCountryCostForm] = useState({
         countryCode: "DEFAULT",
-        interactiveCost: "",
+        selfCost: "",
     });
     const isInexaProvider = Number(selectedProviderId) === 7;
 
@@ -242,7 +242,7 @@ const CourseForm = ({ mode = "add", page }) => {
         setEditingCountryCostId(null);
         setCountryCostForm({
             countryCode: "DEFAULT",
-            interactiveCost: "",
+            selfCost: "",
         });
         setIsCountryCostModalOpen(true);
     };
@@ -269,14 +269,14 @@ const CourseForm = ({ mode = "add", page }) => {
                     providerId: selectedProviderId,
                     courseId: id,
                     countryCode: countryCostForm.countryCode === "DEFAULT" ? "" : countryCostForm.countryCode,
-                    interactiveCost: countryCostForm.interactiveCost,
+                    selfCost: countryCostForm.selfCost,
                 });
             } else {
                 await api.post("/costs/update", {
                     providerId: selectedProviderId,
                     courseId: id,
                     countryCode: countryCostForm.countryCode === "DEFAULT" ? "" : countryCostForm.countryCode,
-                    interactiveCost: countryCostForm.interactiveCost,
+                    selfCost: countryCostForm.selfCost,
                 });
             }
             const res = await api.get(`/costs?providerId=${selectedProviderId}&courseId=${id}`);
@@ -302,7 +302,7 @@ const CourseForm = ({ mode = "add", page }) => {
         setEditingCountryCostId(row?.id || null);
         setCountryCostForm({
             countryCode: row?.country_code || "DEFAULT",
-            interactiveCost: row?.interactive_cost ?? "",
+            selfCost: row?.self_cost ?? "",
         });
         setIsCountryCostModalOpen(true);
     };
@@ -1514,10 +1514,10 @@ const CourseForm = ({ mode = "add", page }) => {
                                         value={values.interactive_cost}
                                         onChange={e => setFieldValue("interactive_cost", e.target.value)}
                                         error={touched.interactive_cost && Boolean(errors.interactive_cost)}
-                                        helperText={errors.interactive_cost}
-                                        disabled={mode === 'view'}
+                                        helperText={isInexaProvider ? "Interactive cost is not used for Inexa-provided courses." : errors.interactive_cost}
+                                        disabled={mode === 'view' || isInexaProvider}
                                     />
-                                </Grid>
+                                </Grid>                               
                                 <Grid item xs={12} md={6}>
                                     <CommonTextField
                                         name="interactive_caption"
@@ -1577,7 +1577,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                                     <thead>
                                                         <tr>
                                                             <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Country</th>
-                                                            <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Interactive Cost</th>
+                                                            <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Self Cost</th>
                                                             {mode !== "view" && (
                                                                 <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Actions</th>
                                                             )}
@@ -1590,7 +1590,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                                                     <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>
                                                                         {row.country_code === "DEFAULT" ? "Default (All Countries)" : row.country_code}
                                                                     </td>
-                                                                    <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>${row.interactive_cost ?? "-"}</td>
+                                                                    <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>{row.self_cost ?? "-"}</td>
                                                                     {mode !== "view" && (
                                                                         <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>
                                                                             <Box display="flex" gap={1}>
@@ -2154,9 +2154,9 @@ const CourseForm = ({ mode = "add", page }) => {
                                             <TextField
                                                 fullWidth
                                                 type="number"
-                                                label="Interactive Cost"
-                                                value={countryCostForm.interactiveCost}
-                                                onChange={(e) => handleCountryCostFormChange("interactiveCost", e.target.value)}
+                                                label="Self Cost"
+                                                value={countryCostForm.selfCost}
+                                                onChange={(e) => handleCountryCostFormChange("selfCost", e.target.value)}
                                             />
                                         </Grid>
                                     </Grid>
