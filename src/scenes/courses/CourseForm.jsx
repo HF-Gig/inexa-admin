@@ -1621,7 +1621,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                         </Box>
                                     </Grid>
                                 )}
-                                {isInexaProvider && (<>
+                                         {/* {isInexaProvider && (<>
                                     <Grid item xs={12}>
                                         <Typography variant="h6" sx={{ mt: 1, mb: 1 }}>Subscription Payment Options</Typography>
                                     </Grid>
