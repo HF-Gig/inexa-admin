@@ -15,6 +15,7 @@ import {
   CorporateFareOutlined,
   PaidOutlined,
   TimelineOutlined,
+  LocalOfferOutlined,
 } from "@mui/icons-material";
 import logo from "../../../assets/images/full-logo.png";
 import Item from "./Item";
@@ -186,6 +187,12 @@ const SideBar = () => {
             path="/costs"
             colors={colors}
             icon={<PaidOutlined />}
+          />
+          <Item
+            title="Coupons"
+            path="/coupons"
+            colors={colors}
+            icon={<LocalOfferOutlined />}
           />
           {getCurrentUserRole() !== "moderator" &&
             <Item
