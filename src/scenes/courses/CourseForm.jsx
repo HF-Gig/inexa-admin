@@ -167,6 +167,7 @@ const CourseForm = ({ mode = "add", page }) => {
                     max_effort: Number(efforts?.max_effort) || 0,
                     isCobranding: data.cobranding === 1,
                     disclaimer: data.disclaimer === 1,
+                    trademark: data.trademark === 0,
                     // Parse weeks_to_complete into duration_value and duration_unit
                     duration_value: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? data.weeks_to_complete.split(' ')[0] : data.weeks_to_complete.toString()) : '',
                     duration_unit: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? (data.weeks_to_complete.split(' ')[1] || 'Weeks') : 'Weeks') : 'Weeks',
@@ -579,6 +580,7 @@ const CourseForm = ({ mode = "add", page }) => {
                     formData.append('cobranding', values.isCobranding ? 1 : 0);
                     console.log("disclaimer value before submit:", values.disclaimer, typeof values.disclaimer);
                     formData.set('disclaimer', values.disclaimer ? 1 : 0);
+                    formData.set('trademark', values.trademark ? 0 : 1);
                     formData.append('breakdown_description', values.breakdown_description);
 
                     if (values?.order || values?.order !== null) {
@@ -588,7 +590,9 @@ const CourseForm = ({ mode = "add", page }) => {
                     }
                     // Append all other fields that are not handled above
                     const skipFields = [
-                        'subject', 'order', 'owner', 'image_url', 'degree_pdf_path', 'staff', 'facilitator', 'enrollment_count', 'first_payment', 'quarterly_payment', 'card_short', 'cert_and_cred_pathways', 'fee_highlights', 'key_highlights', 'course_snapshot', 'admission_steps', 'admission_steps_desc', 'degree_detail_short_desc', 'register_link', 'weeks_to_complete', 'languages', 'course_provider_id', 'efforts', 'transcript_languages', 'breakdown_description', 'self_cost', 'self_caption', 'interactive_cost', 'interactive_caption'
+                        'subject', 'order', 'owner', 'image_url', 'degree_pdf_path', 'staff', 'facilitator', 'enrollment_count', 'first_payment', 'quarterly_payment', 'card_short', 'cert_and_cred_pathways', 'fee_highlights', 'key_highlights', 'course_snapshot', 'admission_steps', 'admission_steps_desc', 'degree_detail_short_desc', 'register_link', 'weeks_to_complete', 'languages', 'course_provider_id', 'efforts', 'transcript_languages', 'breakdown_description', 'self_cost', 'self_caption', 'interactive_cost', 'interactive_caption',
+                        // Set explicitly as 0/1 above; skipping avoids a second append as boolean ("true"/"false"), which breaks MySQL SMALLINT for disclaimer/trademark
+                        'disclaimer', 'trademark', 'isCobranding',
                     ];
                     Object.entries(values).forEach(([key, value]) => {
                         if (skipFields.includes(key)) return;
@@ -1529,6 +1533,55 @@ const CourseForm = ({ mode = "add", page }) => {
                                         disabled={mode === 'view'}
                                     />
                                 </Grid>
+
+                                 <Grid item xs={12} md={6}>
+                                    <CommonTextField
+                                        name="annual_discount_percentage"
+                                        label="Annual Discount Percentage"
+                                        type="number"
+                                        value={values.annual_discount_percentage}
+                                        onChange={e => setFieldValue("annual_discount_percentage", e.target.value)}
+                                        error={touched.annual_discount_percentage && Boolean(errors.annual_discount_percentage)}
+                                        helperText={touched.annual_discount_percentage && errors.annual_discount_percentage}
+                                        disabled={mode === 'view'}
+                                        inputProps={{ min: 0, max: 100 }}
+                                    />
+                                     {mode !== 'view' && (
+                                        <Box mt={1}>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                color="primary"
+                                                onClick={async () => {
+                                                    if (!values.annual_discount_percentage && values.annual_discount_percentage !== 0) {
+                                                        showToast({ message: "Please enter a discount percentage first", severity: "error" });
+                                                        return;
+                                                    }
+                                                    try {
+                                                        const res = await api.put('/courses/update-all-discount', {
+                                                            annual_discount_percentage: values.annual_discount_percentage
+                                                        });
+                                                        if (res.data?.status) {
+                                                            showToast({ 
+                                                                message: res.data.message || "Discount updated for all courses successfully", 
+                                                                severity: "success" 
+                                                            });
+                                                        } else {
+                                                            showToast({ message: res.data?.message || "Failed to update discount for all courses", severity: "error" });
+                                                        }
+                                                    } catch (error) {
+                                                        showToast({ 
+                                                            message: error?.response?.data?.message || "Error updating discount for all courses", 
+                                                            severity: "error" 
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                Apply to All Courses
+                                            </Button>
+                                        </Box>
+                                    )}
+                                </Grid>
                                 <Grid item xs={12} md={6}>
                                     <CommonTextField
                                         name="payment_type_interactive"
@@ -1734,7 +1787,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                         </Grid>
                                     )}
                                 </>
-                                )}
+                                )} */}
                                 {/* Legacy first/quarterly pricing inputs removed; using subscription options above */}
                                 {isProgram &&
                                     <Grid item xs={12} md={4}>
@@ -2068,6 +2121,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                 }
                                 {isProgram && providerInput !== "edx" &&
                                     <Grid item xs={12}>
+                                        <Box display="flex" alignItems="center" gap={2}>
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
@@ -2079,8 +2133,30 @@ const CourseForm = ({ mode = "add", page }) => {
                                             }
                                             label="Disclaimer"
                                         />
+
+                                        {(() => {
+                                                const selectedProgramType = filters.program_types?.find(pt => pt.id === values.program_type);
+                                                const isMicroProgram = selectedProgramType?.name === "MicroMasters" || selectedProgramType?.name === "MicroBachelors";
+                                                return isMicroProgram && (
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Checkbox
+                                                                name="trademark"
+                                                                checked={values.trademark}
+                                                                onChange={e => setFieldValue("trademark", e.target.checked)}
+                                                                disabled={mode === 'view'}
+                                                            />
+                                                        }
+                                                        label="Trademark"
+                                                    />
+                                                );
+                                            })()}
+                                        </Box>
                                         {touched.disclaimer && Boolean(errors.disclaimer) && (
                                             <FormHelperText error>{errors.disclaimer}</FormHelperText>
+                                        )}
+                                         {touched.trademark && Boolean(errors.trademark) && (
+                                            <FormHelperText error>{errors.trademark}</FormHelperText>
                                         )}
                                     </Grid>
                                 }

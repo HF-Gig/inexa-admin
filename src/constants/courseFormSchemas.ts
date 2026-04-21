@@ -50,7 +50,8 @@ export const baseInitialValues = {
   max_effort: "",
   pacing_type: "",
   order: 0,
-  disclaimer: false,
+  disclaimer: true,
+  trademark: true,
   course_snapshot: "",
   isCobranding: true,
   program_card_title: "Inexa's Designed Interactive Learning Experiences",
@@ -186,6 +187,7 @@ export const baseValidation = {
   program_card_bullets: Yup.string().nullable(),
   program_card_caption: Yup.string().nullable(),
   program_card_info_url: Yup.string().nullable(),
+  annual_discount_percentage: Yup.number().nullable().min(0, "Discount percentage cannot be negative").max(100, "Discount percentage cannot exceed 100"),
   min_effort: Yup.number(), // .required("Min effort is required"),
   max_effort: Yup.number(),
   // .min(0, "Max effort must be positive")

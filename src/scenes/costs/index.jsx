@@ -28,14 +28,15 @@ import CommonTable from "../../components/CommonTable";
 
 const roundMoney = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
-/** Annual subscription / once-off total: 2×interactive + self. */
+/** Annual subscription / once-off total: interactive + self. */
 const annualSubscriptionTotalFromCosts = (interactive, self) => {
     const i = Number(interactive);
     const s = Number(self);
     const ii = Number.isFinite(i) ? i : 0;
     const ss = Number.isFinite(s) ? s : 0;
     if (ii <= 0 && ss <= 0) return 0;
-    return roundMoney(2 * ii + ss);
+    // return roundMoney(2 * ii + ss);
+    return roundMoney(ii + ss);
 };
 
 /**
@@ -595,7 +596,8 @@ const Costs = () => {
                                 <Divider sx={{ my: 3 }} />
                                 <Typography variant="h6" mb="12px">2) Subscription Payment Options</Typography>
                                 <Typography variant="body2" sx={{ color: colors.gray[100], mb: 2 }}>
-                                    Annual subscription total (same as once-off) is <strong>2 × Interactive cost + Self cost</strong> per country row. Installment percentages apply to that total; amounts are saved per country. The preview below follows the same rule as the learner site: if your IP country matches a configured country row, that row is used with the local currency from your IP; otherwise the default (first) row is shown in USD. All options are enabled by default for edX courses.
+                                    {/* Annual subscription total (same as once-off) is <strong>2 × Interactive cost + Self cost</strong> per country row. Installment percentages apply to that total; amounts are saved per country. The preview below follows the same rule as the learner site: if your IP country matches a configured country row, that row is used with the local currency from your IP; otherwise the default (first) row is shown in USD. All options are enabled by default for edX courses. */}
+                                    Annual subscription total (same as once-off) is <strong>Interactive cost + Self cost</strong> per country row. Installment percentages apply to that total; amounts are saved per country. The preview below follows the same rule as the learner site: if your IP country matches a configured country row, that row is used with the local currency from your IP; otherwise the default (first) row is shown in USD. All options are enabled by default for edX courses.
                                 </Typography>
                                 <Box mb={2} maxWidth={560}>
                                     <Typography variant="body2">
@@ -609,7 +611,8 @@ const Costs = () => {
                                         </strong>
                                     </Typography>
                                     <Typography variant="caption" display="block" sx={{ color: colors.gray[100], mt: 0.5 }}>
-                                        Formula: (2 × Interactive) + Self. Add interactive and self costs in section 1.
+                                        {/* Formula: (2 × Interactive) + Self. Add interactive and self costs in section 1. */}
+                                        Formula: (Interactive) + Self. Add interactive and self costs in section 1.
                                     </Typography>
                                 </Box>
                                 <FormGroup>

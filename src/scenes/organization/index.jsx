@@ -143,7 +143,14 @@ const Organization = () => {
     };
 
     const tableColumns = [
-        { name: "id", label: "ID", width: 80 },
+        // { name: "id", label: "ID", width: 80 },
+            { 
+            name: "serial", 
+            label: "ID", 
+            width: 80,
+            sortable: false,
+            render: (row, index) => (page * rowsPerPage) + index + 1
+        },
         {
             name: "organization_logo_image_url",
             label: "Logo",

@@ -156,7 +156,8 @@ const CommonTable = ({
                         ...(col.width ? { width: col.width } : {}),
                       }}
                     >
-                      {col.render ? col.render(row, idx) : row[col.name]}
+                      {/* {col.render ? col.render(row) : row[col.name]} */}
+                       {col.render ? col.render(row, idx) : row[col.name]}
                     </TableCell>
                   ))}
                   {actions && (

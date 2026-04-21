@@ -196,7 +196,8 @@ const Management = () => {
           {
             name: "id",
             label: "ID",
-            render: (row) => (
+            // render: (row) => (
+               render: (row, index) => (
               <Box
                 sx={{
                   color: 'black',
@@ -205,7 +206,8 @@ const Management = () => {
                   borderRadius: 2,
                 }}
               >
-                {row.id}
+                {/* {row.id} */}
+                {page * rowsPerPage + index + 1}
               </Box>
             ),
           },
