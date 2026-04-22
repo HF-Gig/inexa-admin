@@ -167,7 +167,7 @@ const CourseForm = ({ mode = "add", page }) => {
                     max_effort: Number(efforts?.max_effort) || 0,
                     isCobranding: data.cobranding === 1,
                     disclaimer: data.disclaimer === 1,
-                    trademark: data.trademark === 0,
+                    trademark: data.trademark === 1,
                     // Parse weeks_to_complete into duration_value and duration_unit
                     duration_value: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? data.weeks_to_complete.split(' ')[0] : data.weeks_to_complete.toString()) : '',
                     duration_unit: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? (data.weeks_to_complete.split(' ')[1] || 'Weeks') : 'Weeks') : 'Weeks',
@@ -580,7 +580,7 @@ const CourseForm = ({ mode = "add", page }) => {
                     formData.append('cobranding', values.isCobranding ? 1 : 0);
                     console.log("disclaimer value before submit:", values.disclaimer, typeof values.disclaimer);
                     formData.set('disclaimer', values.disclaimer ? 1 : 0);
-                    formData.set('trademark', values.trademark ? 0 : 1);
+                    formData.set('trademark', values.trademark ? 1 : 0);
                     formData.append('breakdown_description', values.breakdown_description);
 
                     if (values?.order || values?.order !== null) {

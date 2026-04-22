@@ -3,22 +3,19 @@ import {
     Button,
     TextField,
     Typography,
-    useTheme,
     IconButton,
+    MenuItem,
 } from "@mui/material";
-import { Edit, Delete } from "@mui/icons-material";
+import { ContentCopy, Edit, PauseCircle, PlayCircle, QueryStats, Delete } from "@mui/icons-material";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import Header from "../../components/Header";
-import { tokens } from "../../theme";
 import { useEffect, useState } from "react";
 import api from "../../helpers/api";
 import CommonTable from "../../components/CommonTable";
 import dayjs from "dayjs";
 
 const Coupons = () => {
-    const theme = useTheme();
-    const colors = tokens(theme.palette.mode);
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [rows, setRows] = useState([]);
@@ -47,13 +44,20 @@ const Coupons = () => {
     const handleFormSubmit = async (values, { setSubmitting, resetForm }) => {
         setSuccessMessage("");
         setErrorMessage("");
+        const payload = {
+            ...values,
+            allowedDomains: parseCommaSeparated(values.allowedDomains),
+            allowedUserIds: parseCommaSeparated(values.allowedUserIds)
+                .map((id) => Number(id))
+                .filter((id) => Number.isFinite(id)),
+        };
 
         try {
             if (editingRow) {
-                await api.put(`/coupons/${editingRow.id}`, values);
+                await api.put(`/coupons/${editingRow.id}`, payload);
                 setSuccessMessage("Coupon updated successfully.");
             } else {
-                await api.post("/coupons", values);
+                await api.post("/coupons", payload);
                 setSuccessMessage("Coupon created successfully.");
             }
             fetchRows();
@@ -86,15 +90,70 @@ const Coupons = () => {
         }
     };
 
+    const handlePauseResume = async (row) => {
+        try {
+            const endpoint = row.status === "active" ? "pause" : "resume";
+            await api.post(`/coupons/${row.id}/${endpoint}`);
+            setSuccessMessage(`Coupon ${endpoint === "pause" ? "paused" : "resumed"} successfully.`);
+            fetchRows();
+        } catch (error) {
+            setErrorMessage(error.response?.data?.error || "Failed to update status.");
+        }
+    };
+
+    const handleDuplicate = async (row) => {
+        const newCode = window.prompt("Enter new promo code:", `${row.code}_COPY`);
+        if (!newCode) return;
+        try {
+            await api.post(`/coupons/${row.id}/duplicate`, { code: newCode });
+            setSuccessMessage("Coupon duplicated successfully.");
+            fetchRows();
+        } catch (error) {
+            setErrorMessage(error.response?.data?.error || "Failed to duplicate coupon.");
+        }
+    };
+
+    const handleShowReport = async (row) => {
+        try {
+            const response = await api.get(`/coupons/${row.id}/report`);
+            const metrics = response?.data?.data?.metrics;
+            if (!metrics) throw new Error("No metrics");
+            window.alert(
+                `Promo ${row.code}\n` +
+                `Applied: ${metrics.numberOfTimesApplied}\n` +
+                `Successful checkouts: ${metrics.successfulCheckouts}\n` +
+                `Failed attempts: ${metrics.failedAttempts}`
+            );
+        } catch (error) {
+            setErrorMessage(error.response?.data?.error || "Failed to fetch usage report.");
+        }
+    };
+
+    const parseCommaSeparated = (value) =>
+        String(value || "")
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+
     const initialValues = {
         code: editingRow?.code ?? "",
         percentage: editingRow?.percentage ?? "",
+        status: editingRow?.status ?? "active",
+        usageLimitPerCustomer: editingRow?.usageLimitPerCustomer ?? 1,
+        audienceType: editingRow?.audienceType ?? "all",
+        startsAt: editingRow?.startsAt ? new Date(editingRow.startsAt).toISOString().split("T")[0] : "",
         expiryDate: editingRow?.expiryDate ? new Date(editingRow.expiryDate).toISOString().split('T')[0] : "",
+        allowedDomains: Array.isArray(editingRow?.allowedDomains) ? editingRow.allowedDomains.join(", ") : "",
+        allowedUserIds: Array.isArray(editingRow?.allowedUserIds) ? editingRow.allowedUserIds.join(", ") : "",
     };
 
     const checkoutSchema = Yup.object().shape({
         code: Yup.string().required("Code is required"),
         percentage: Yup.number().required("Percentage is required").min(0).max(100),
+        status: Yup.string().oneOf(["active", "paused", "deleted"]).required("Status is required"),
+        usageLimitPerCustomer: Yup.number().required("Usage limit is required").min(1),
+        audienceType: Yup.string().oneOf(["all", "business_domains", "specific_users", "mixed"]).required("Audience is required"),
+        startsAt: Yup.date().nullable(),
         expiryDate: Yup.date().nullable(),
     });
 
@@ -165,6 +224,9 @@ const Coupons = () => {
                             },
                             { name: "code", label: "Coupon Code" },
                             { name: "percentage", label: "Percentage (%)" },
+                            { name: "status", label: "Status" },
+                            { name: "usageLimitPerCustomer", label: "Limit / customer" },
+                            { name: "audienceType", label: "Audience" },
                             {
                                 name: "expiryDate",
                                 label: "Expiry Date",
@@ -186,6 +248,19 @@ const Coupons = () => {
                             <Box display="flex" gap={1}>
                                 <IconButton size="small" sx={{ color: '#ff9800' }} onClick={() => handleEdit(row)}>
                                     <Edit />
+                                </IconButton>
+                                <IconButton size="small" sx={{ color: '#3f51b5' }} onClick={() => handleDuplicate(row)}>
+                                    <ContentCopy />
+                                </IconButton>
+                                <IconButton
+                                    size="small"
+                                    sx={{ color: row.status === "active" ? '#e65100' : '#2e7d32' }}
+                                    onClick={() => handlePauseResume(row)}
+                                >
+                                    {row.status === "active" ? <PauseCircle /> : <PlayCircle />}
+                                </IconButton>
+                                <IconButton size="small" sx={{ color: '#1976d2' }} onClick={() => handleShowReport(row)}>
+                                    <QueryStats />
                                 </IconButton>
                                 <IconButton size="small" sx={{ color: '#f44336' }} onClick={() => handleDelete(row)}>
                                     <Delete />
@@ -240,6 +315,64 @@ const Coupons = () => {
                                     <TextField
                                         fullWidth
                                         variant="filled"
+                                        select
+                                        label="Status"
+                                        onBlur={handleBlur}
+                                        onChange={handleChange}
+                                        value={values.status}
+                                        name="status"
+                                        error={!!touched.status && !!errors.status}
+                                        helperText={touched.status && errors.status}
+                                    >
+                                        <MenuItem value="active">Active</MenuItem>
+                                        <MenuItem value="paused">Paused</MenuItem>
+                                        <MenuItem value="deleted">Deleted</MenuItem>
+                                    </TextField>
+                                    <TextField
+                                        fullWidth
+                                        variant="filled"
+                                        type="number"
+                                        label="Usage limit per customer"
+                                        onBlur={handleBlur}
+                                        onChange={handleChange}
+                                        value={values.usageLimitPerCustomer}
+                                        name="usageLimitPerCustomer"
+                                        error={!!touched.usageLimitPerCustomer && !!errors.usageLimitPerCustomer}
+                                        helperText={touched.usageLimitPerCustomer && errors.usageLimitPerCustomer}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        variant="filled"
+                                        select
+                                        label="Audience"
+                                        onBlur={handleBlur}
+                                        onChange={handleChange}
+                                        value={values.audienceType}
+                                        name="audienceType"
+                                        error={!!touched.audienceType && !!errors.audienceType}
+                                        helperText={touched.audienceType && errors.audienceType}
+                                    >
+                                        <MenuItem value="all">All customers</MenuItem>
+                                        <MenuItem value="business_domains">Business domains only</MenuItem>
+                                        <MenuItem value="specific_users">Specific users only</MenuItem>
+                                        <MenuItem value="mixed">Business domains or users</MenuItem>
+                                    </TextField>
+                                    <TextField
+                                        fullWidth
+                                        variant="filled"
+                                        type="date"
+                                        label="Start Date"
+                                        onBlur={handleBlur}
+                                        onChange={handleChange}
+                                        value={values.startsAt}
+                                        name="startsAt"
+                                        InputLabelProps={{ shrink: true }}
+                                        error={!!touched.startsAt && !!errors.startsAt}
+                                        helperText={touched.startsAt && errors.startsAt}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        variant="filled"
                                         type="date"
                                         label="Expiry Date"
                                         onBlur={handleBlur}
@@ -249,6 +382,26 @@ const Coupons = () => {
                                         InputLabelProps={{ shrink: true }}
                                         error={!!touched.expiryDate && !!errors.expiryDate}
                                         helperText={touched.expiryDate && errors.expiryDate}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        variant="filled"
+                                        label="Allowed business domains (comma separated)"
+                                        onBlur={handleBlur}
+                                        onChange={handleChange}
+                                        value={values.allowedDomains}
+                                        name="allowedDomains"
+                                        placeholder="wework.com, acme.co.za"
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        variant="filled"
+                                        label="Allowed email (comma separated)"
+                                        onBlur={handleBlur}
+                                        onChange={handleChange}
+                                        value={values.allowedUserIds}
+                                        name="allowedUserIds"
+                                        placeholder="alice@example.com, bob@acme.co.za"
                                     />
                                 </Box>
                                 <Box display="flex" justifyContent="end" gap={2} mt="20px">
