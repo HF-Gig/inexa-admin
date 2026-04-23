@@ -113,15 +113,15 @@ const CourseForm = ({ mode = "add", page }) => {
                     interactive_caption: data.interactive_caption,
                     payment_type_self: data.payment_type_self,
                     payment_type_interactive: data.payment_type_interactive,
-                    payment_option_once_off: data.payment_option_once_off ?? true,
-                    payment_option_thirty_sixty: data.payment_option_thirty_sixty ?? true,
-                    payment_option_monthly_11: data.payment_option_monthly_11 ?? true,
-                    payment_option_quarterly_3: data.payment_option_quarterly_3 ?? true,
-                    payment_first_30_60: data.payment_first_30_60 ?? "",
-                    payment_second_30_60: data.payment_second_30_60 ?? "",
-                    payment_third_30_60: data.payment_third_30_60 ?? "",
-                    payment_first_monthly_11: data.payment_first_monthly_11 ?? "",
-                    payment_first_quarterly_3: data.payment_first_quarterly_3 ?? "",
+                    // payment_option_once_off: data.payment_option_once_off ?? true,
+                    // payment_option_thirty_sixty: data.payment_option_thirty_sixty ?? true,
+                    // payment_option_monthly_11: data.payment_option_monthly_11 ?? true,
+                    // payment_option_quarterly_3: data.payment_option_quarterly_3 ?? true,
+                    // payment_first_30_60: data.payment_first_30_60 ?? "",
+                    // payment_second_30_60: data.payment_second_30_60 ?? "",
+                    // payment_third_30_60: data.payment_third_30_60 ?? "",
+                    // payment_first_monthly_11: data.payment_first_monthly_11 ?? "",
+                    // payment_first_quarterly_3: data.payment_first_quarterly_3 ?? "",
                     program_card_title: (data.program_card_title && data.program_card_title !== "null") ? data.program_card_title : "Inexa's Designed Interactive Learning Experiences",
                     program_card_subtitle: (data.program_card_subtitle && data.program_card_subtitle !== "null") ? data.program_card_subtitle : "Fully interactive learning experiences where you will interact with your peers, Inexa's instructors, and support agents.",
                     program_card_bullets: (data.program_card_bullets && data.program_card_bullets !== "null") ? data.program_card_bullets : "Fully interactive learning experiences.\nSpecialized inexa facilitators.\nImpactful learning journeys.\nCost-effective programs.\nReal-World Practical Application.\nTailored programs for enterprises.",
@@ -168,6 +168,7 @@ const CourseForm = ({ mode = "add", page }) => {
                     isCobranding: data.cobranding === 1,
                     disclaimer: data.disclaimer === 1,
                     trademark: data.trademark === 1,
+                    annual_discount_percentage:data.annual_discount_percentage,
                     // Parse weeks_to_complete into duration_value and duration_unit
                     duration_value: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? data.weeks_to_complete.split(' ')[0] : data.weeks_to_complete.toString()) : '',
                     duration_unit: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? (data.weeks_to_complete.split(' ')[1] || 'Weeks') : 'Weeks') : 'Weeks',
@@ -1532,9 +1533,8 @@ const CourseForm = ({ mode = "add", page }) => {
                                         helperText={errors.interactive_caption}
                                         disabled={mode === 'view'}
                                     />
-                                </Grid>
-
-                                 <Grid item xs={12} md={6}>
+                                       </Grid>
+                                <Grid item xs={12} md={6}>
                                     <CommonTextField
                                         name="annual_discount_percentage"
                                         label="Annual Discount Percentage"
@@ -1546,7 +1546,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                         disabled={mode === 'view'}
                                         inputProps={{ min: 0, max: 100 }}
                                     />
-                                     {mode !== 'view' && (
+                                    {mode !== 'view' && (
                                         <Box mt={1}>
                                             <Button
                                                 variant="outlined"
@@ -1562,17 +1562,17 @@ const CourseForm = ({ mode = "add", page }) => {
                                                             annual_discount_percentage: values.annual_discount_percentage
                                                         });
                                                         if (res.data?.status) {
-                                                            showToast({ 
-                                                                message: res.data.message || "Discount updated for all courses successfully", 
-                                                                severity: "success" 
+                                                            showToast({
+                                                                message: res.data.message || "Discount updated for all courses successfully",
+                                                                severity: "success"
                                                             });
                                                         } else {
                                                             showToast({ message: res.data?.message || "Failed to update discount for all courses", severity: "error" });
                                                         }
                                                     } catch (error) {
-                                                        showToast({ 
-                                                            message: error?.response?.data?.message || "Error updating discount for all courses", 
-                                                            severity: "error" 
+                                                        showToast({
+                                                            message: error?.response?.data?.message || "Error updating discount for all courses",
+                                                            severity: "error"
                                                         });
                                                     }
                                                 }}
