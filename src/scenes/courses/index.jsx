@@ -147,6 +147,7 @@ const Courses = ({ pageType = 'courses' }) => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [universityFilter, setUniversityFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [createdAtRange, setCreatedAtRange] = useState(undefined);
   const [updatedAtRange, setUpdatedAtRange] = useState(undefined);
   const [universities, setUniversities] = useState([]);
@@ -177,7 +178,7 @@ const Courses = ({ pageType = 'courses' }) => {
   useEffect(() => {
     fetchCourses();
     // eslint-disable-next-line
-  }, [ page, rowsPerPage, sortCol, sortDir, debouncedSearch, universityFilter, typeFilter, createdAtRange, updatedAtRange, location, pageType,]);
+  }, [ page, rowsPerPage, sortCol, sortDir, debouncedSearch, universityFilter, typeFilter, statusFilter, createdAtRange, updatedAtRange, location, pageType,]);
 
   useEffect(() => {
     fetchUniversities();
@@ -187,7 +188,7 @@ const Courses = ({ pageType = 'courses' }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [universityFilter, typeFilter, createdAtRange, updatedAtRange]);
+  }, [universityFilter, typeFilter, statusFilter, createdAtRange, updatedAtRange]);
 
   useEffect(() => {
     if (location.state?.toast) {
@@ -221,6 +222,7 @@ const Courses = ({ pageType = 'courses' }) => {
       });
       if (universityFilter) params.append('owners', universityFilter);
       if (typeFilter) params.append('program_type_slug', typeFilter);
+      if (statusFilter !== "all") params.append("status", statusFilter);
       if (createdAtRange?.from) {
         params.append("created_from", formatLocalYmd(createdAtRange.from));
       }
@@ -487,6 +489,18 @@ const Courses = ({ pageType = 'courses' }) => {
                   {t.name}
                 </MenuItem>
               ))}
+            </TextField>
+            <TextField
+              select
+              label="Status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              size="small"
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="all">All Statuses</MenuItem>
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="inactive">Inactive</MenuItem>
             </TextField>
             <CommonDateRangeSelect
               label="Created"
