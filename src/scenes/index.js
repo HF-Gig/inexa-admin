@@ -15,6 +15,7 @@ export { default as Staff } from "./staff";
 export { default as StaffForm } from "./staff/StaffForm";
 export { default as Subscriptions } from "./subscriptions";
 export { default as Costs } from "./costs";
+export { default as Coupons } from "./coupons";
 
 export {
   Navbar,

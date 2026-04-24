@@ -113,6 +113,7 @@ const Signin = () => {
                       fontSize: { xs: '14px', sm: '16px' }
                     }
                   }}
+                  inputProps={{ autoComplete: "username" }}
                 />
                 <Box position="relative">
                   <Field
@@ -131,6 +132,7 @@ const Signin = () => {
                         fontSize: { xs: '14px', sm: '16px' }
                       }
                     }}
+                    inputProps={{ autoComplete: "current-password" }}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">

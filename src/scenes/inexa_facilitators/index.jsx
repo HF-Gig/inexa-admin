@@ -50,7 +50,7 @@ const InexaFacilitators = () => {
     const fetchFacilitators = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/staff/inexa-staff/get-all');
+            const response = await api.get('/staff/get-all-inexa-staff');
             if (response.status !== 200) throw new Error("Failed to fetch facilitators");
             setFacilitators(response.data.data || []);
         } catch (error) {

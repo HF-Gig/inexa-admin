@@ -72,7 +72,7 @@ const CourseForm = ({ mode = "add", page }) => {
     const [deleteCountryCostRow, setDeleteCountryCostRow] = useState(null);
     const [countryCostForm, setCountryCostForm] = useState({
         countryCode: "DEFAULT",
-        interactiveCost: "",
+        selfCost: "",
     });
     const isInexaProvider = Number(selectedProviderId) === 7;
 
@@ -113,15 +113,15 @@ const CourseForm = ({ mode = "add", page }) => {
                     interactive_caption: data.interactive_caption,
                     payment_type_self: data.payment_type_self,
                     payment_type_interactive: data.payment_type_interactive,
-                    payment_option_once_off: data.payment_option_once_off ?? true,
-                    payment_option_thirty_sixty: data.payment_option_thirty_sixty ?? true,
-                    payment_option_monthly_11: data.payment_option_monthly_11 ?? true,
-                    payment_option_quarterly_3: data.payment_option_quarterly_3 ?? true,
-                    payment_first_30_60: data.payment_first_30_60 ?? "",
-                    payment_second_30_60: data.payment_second_30_60 ?? "",
-                    payment_third_30_60: data.payment_third_30_60 ?? "",
-                    payment_first_monthly_11: data.payment_first_monthly_11 ?? "",
-                    payment_first_quarterly_3: data.payment_first_quarterly_3 ?? "",
+                    // payment_option_once_off: data.payment_option_once_off ?? true,
+                    // payment_option_thirty_sixty: data.payment_option_thirty_sixty ?? true,
+                    // payment_option_monthly_11: data.payment_option_monthly_11 ?? true,
+                    // payment_option_quarterly_3: data.payment_option_quarterly_3 ?? true,
+                    // payment_first_30_60: data.payment_first_30_60 ?? "",
+                    // payment_second_30_60: data.payment_second_30_60 ?? "",
+                    // payment_third_30_60: data.payment_third_30_60 ?? "",
+                    // payment_first_monthly_11: data.payment_first_monthly_11 ?? "",
+                    // payment_first_quarterly_3: data.payment_first_quarterly_3 ?? "",
                     program_card_title: (data.program_card_title && data.program_card_title !== "null") ? data.program_card_title : "Inexa's Designed Interactive Learning Experiences",
                     program_card_subtitle: (data.program_card_subtitle && data.program_card_subtitle !== "null") ? data.program_card_subtitle : "Fully interactive learning experiences where you will interact with your peers, Inexa's instructors, and support agents.",
                     program_card_bullets: (data.program_card_bullets && data.program_card_bullets !== "null") ? data.program_card_bullets : "Fully interactive learning experiences.\nSpecialized inexa facilitators.\nImpactful learning journeys.\nCost-effective programs.\nReal-World Practical Application.\nTailored programs for enterprises.",
@@ -167,6 +167,8 @@ const CourseForm = ({ mode = "add", page }) => {
                     max_effort: Number(efforts?.max_effort) || 0,
                     isCobranding: data.cobranding === 1,
                     disclaimer: data.disclaimer === 1,
+                    trademark: data.trademark === 1,
+                    annual_discount_percentage:data.annual_discount_percentage,
                     // Parse weeks_to_complete into duration_value and duration_unit
                     duration_value: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? data.weeks_to_complete.split(' ')[0] : data.weeks_to_complete.toString()) : '',
                     duration_unit: data.weeks_to_complete ? (typeof data.weeks_to_complete === 'string' ? (data.weeks_to_complete.split(' ')[1] || 'Weeks') : 'Weeks') : 'Weeks',
@@ -242,7 +244,7 @@ const CourseForm = ({ mode = "add", page }) => {
         setEditingCountryCostId(null);
         setCountryCostForm({
             countryCode: "DEFAULT",
-            interactiveCost: "",
+            selfCost: "",
         });
         setIsCountryCostModalOpen(true);
     };
@@ -269,14 +271,14 @@ const CourseForm = ({ mode = "add", page }) => {
                     providerId: selectedProviderId,
                     courseId: id,
                     countryCode: countryCostForm.countryCode === "DEFAULT" ? "" : countryCostForm.countryCode,
-                    interactiveCost: countryCostForm.interactiveCost,
+                    selfCost: countryCostForm.selfCost,
                 });
             } else {
                 await api.post("/costs/update", {
                     providerId: selectedProviderId,
                     courseId: id,
                     countryCode: countryCostForm.countryCode === "DEFAULT" ? "" : countryCostForm.countryCode,
-                    interactiveCost: countryCostForm.interactiveCost,
+                    selfCost: countryCostForm.selfCost,
                 });
             }
             const res = await api.get(`/costs?providerId=${selectedProviderId}&courseId=${id}`);
@@ -302,7 +304,7 @@ const CourseForm = ({ mode = "add", page }) => {
         setEditingCountryCostId(row?.id || null);
         setCountryCostForm({
             countryCode: row?.country_code || "DEFAULT",
-            interactiveCost: row?.interactive_cost ?? "",
+            selfCost: row?.self_cost ?? "",
         });
         setIsCountryCostModalOpen(true);
     };
@@ -579,6 +581,7 @@ const CourseForm = ({ mode = "add", page }) => {
                     formData.append('cobranding', values.isCobranding ? 1 : 0);
                     console.log("disclaimer value before submit:", values.disclaimer, typeof values.disclaimer);
                     formData.set('disclaimer', values.disclaimer ? 1 : 0);
+                    formData.set('trademark', values.trademark ? 1 : 0);
                     formData.append('breakdown_description', values.breakdown_description);
 
                     if (values?.order || values?.order !== null) {
@@ -588,7 +591,9 @@ const CourseForm = ({ mode = "add", page }) => {
                     }
                     // Append all other fields that are not handled above
                     const skipFields = [
-                        'subject', 'order', 'owner', 'image_url', 'degree_pdf_path', 'staff', 'facilitator', 'enrollment_count', 'first_payment', 'quarterly_payment', 'card_short', 'cert_and_cred_pathways', 'fee_highlights', 'key_highlights', 'course_snapshot', 'admission_steps', 'admission_steps_desc', 'degree_detail_short_desc', 'register_link', 'weeks_to_complete', 'languages', 'course_provider_id', 'efforts', 'transcript_languages', 'breakdown_description', 'self_cost', 'self_caption', 'interactive_cost', 'interactive_caption'
+                        'subject', 'order', 'owner', 'image_url', 'degree_pdf_path', 'staff', 'facilitator', 'enrollment_count', 'first_payment', 'quarterly_payment', 'card_short', 'cert_and_cred_pathways', 'fee_highlights', 'key_highlights', 'course_snapshot', 'admission_steps', 'admission_steps_desc', 'degree_detail_short_desc', 'register_link', 'weeks_to_complete', 'languages', 'course_provider_id', 'efforts', 'transcript_languages', 'breakdown_description', 'self_cost', 'self_caption', 'interactive_cost', 'interactive_caption',
+                        // Set explicitly as 0/1 above; skipping avoids a second append as boolean ("true"/"false"), which breaks MySQL SMALLINT for disclaimer/trademark
+                        'disclaimer', 'trademark', 'isCobranding',
                     ];
                     Object.entries(values).forEach(([key, value]) => {
                         if (skipFields.includes(key)) return;
@@ -628,13 +633,14 @@ const CourseForm = ({ mode = "add", page }) => {
                         const res = await api.post(url, formData);
                         // Debug: log the response for verification
                         console.log('Course save response:', res, res?.data);
-                        if (res.status === 200) {
+                        if (res.status === 200 && res.data?.status !== false) {
                             navigate(navigatePage, { state: { toast: { message: `${isProgram ? "Program" : "Course"} ${mode === "add" ? "added" : "updated"} successfully!`, severity: "success" } } });
                         } else {
-                            showToast({ message: `Failed to save ${isProgram ? "program" : "course"}. Please try again.`, severity: "error" });
+                            showToast({ message: res.data?.message || `Failed to save ${isProgram ? "program" : "course"}. Please try again.`, severity: "error" });
                         }
                     } catch (e) {
-                        showToast({ message: `Failed to save ${isProgram ? "program" : "course"}. Please try again.`, severity: "error" });
+                        const msg = e.response?.data?.message || `Failed to save ${isProgram ? "program" : "course"}. Please try again.`;
+                        showToast({ message: msg, severity: "error" });
                     } finally {
                         setSubmitting(false);
                     }
@@ -1513,10 +1519,10 @@ const CourseForm = ({ mode = "add", page }) => {
                                         value={values.interactive_cost}
                                         onChange={e => setFieldValue("interactive_cost", e.target.value)}
                                         error={touched.interactive_cost && Boolean(errors.interactive_cost)}
-                                        helperText={errors.interactive_cost}
-                                        disabled={mode === 'view'}
+                                        helperText={isInexaProvider ? "Interactive cost is not used for Inexa-provided courses." : errors.interactive_cost}
+                                        disabled={mode === 'view' || isInexaProvider}
                                     />
-                                </Grid>
+                                </Grid>                               
                                 <Grid item xs={12} md={6}>
                                     <CommonTextField
                                         name="interactive_caption"
@@ -1527,6 +1533,54 @@ const CourseForm = ({ mode = "add", page }) => {
                                         helperText={errors.interactive_caption}
                                         disabled={mode === 'view'}
                                     />
+                                       </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <CommonTextField
+                                        name="annual_discount_percentage"
+                                        label="Annual Discount Percentage"
+                                        type="number"
+                                        value={values.annual_discount_percentage}
+                                        onChange={e => setFieldValue("annual_discount_percentage", e.target.value)}
+                                        error={touched.annual_discount_percentage && Boolean(errors.annual_discount_percentage)}
+                                        helperText={touched.annual_discount_percentage && errors.annual_discount_percentage}
+                                        disabled={mode === 'view'}
+                                        inputProps={{ min: 0, max: 100 }}
+                                    />
+                                    {mode !== 'view' && (
+                                        <Box mt={1}>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                color="primary"
+                                                onClick={async () => {
+                                                    if (!values.annual_discount_percentage && values.annual_discount_percentage !== 0) {
+                                                        showToast({ message: "Please enter a discount percentage first", severity: "error" });
+                                                        return;
+                                                    }
+                                                    try {
+                                                        const res = await api.put('/courses/update-all-discount', {
+                                                            annual_discount_percentage: values.annual_discount_percentage
+                                                        });
+                                                        if (res.data?.status) {
+                                                            showToast({
+                                                                message: res.data.message || "Discount updated for all courses successfully",
+                                                                severity: "success"
+                                                            });
+                                                        } else {
+                                                            showToast({ message: res.data?.message || "Failed to update discount for all courses", severity: "error" });
+                                                        }
+                                                    } catch (error) {
+                                                        showToast({
+                                                            message: error?.response?.data?.message || "Error updating discount for all courses",
+                                                            severity: "error"
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                Apply to All Courses
+                                            </Button>
+                                        </Box>
+                                    )}
                                 </Grid>
                                 <Grid item xs={12} md={6}>
                                     <CommonTextField
@@ -1539,6 +1593,19 @@ const CourseForm = ({ mode = "add", page }) => {
                                         disabled={mode === 'view'}
                                     />
                                 </Grid>
+                                {isProgram &&
+                                    <Grid item xs={12} md={4}>
+                                        <CommonTextField
+                                            name="price"
+                                            label="Price"
+                                            value={values.price}
+                                            onChange={e => setFieldValue("price", e.target.value)}
+                                            error={touched.price && Boolean(errors.price)}
+                                            helperText={errors.price}
+                                            disabled={mode === 'view'}
+                                        />
+                                    </Grid>
+                                }
                                 {isInexaProvider && (
                                     <Grid item xs={12}>
                                         <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 2, p: 2 }}>
@@ -1563,7 +1630,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                                     <thead>
                                                         <tr>
                                                             <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Country</th>
-                                                            <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Interactive Cost</th>
+                                                            <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Self Cost</th>
                                                             {mode !== "view" && (
                                                                 <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "8px" }}>Actions</th>
                                                             )}
@@ -1576,7 +1643,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                                                     <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>
                                                                         {row.country_code === "DEFAULT" ? "Default (All Countries)" : row.country_code}
                                                                     </td>
-                                                                    <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>${row.interactive_cost ?? "-"}</td>
+                                                                    <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>{row.self_cost ?? "-"}</td>
                                                                     {mode !== "view" && (
                                                                         <td style={{ borderBottom: "1px solid #f0f0f0", padding: "8px" }}>
                                                                             <Box display="flex" gap={1}>
@@ -1607,7 +1674,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                         </Box>
                                     </Grid>
                                 )}
-                                {isInexaProvider && (<>
+                                         {/* {isInexaProvider && (<>
                                     <Grid item xs={12}>
                                         <Typography variant="h6" sx={{ mt: 1, mb: 1 }}>Subscription Payment Options</Typography>
                                     </Grid>
@@ -1720,7 +1787,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                         </Grid>
                                     )}
                                 </>
-                                )}
+                                )} */}
                                 {/* Legacy first/quarterly pricing inputs removed; using subscription options above */}
                                 {isProgram &&
                                     <Grid item xs={12} md={4}>
@@ -2054,6 +2121,7 @@ const CourseForm = ({ mode = "add", page }) => {
                                 }
                                 {isProgram && providerInput !== "edx" &&
                                     <Grid item xs={12}>
+                                        <Box display="flex" alignItems="center" gap={2}>
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
@@ -2065,8 +2133,30 @@ const CourseForm = ({ mode = "add", page }) => {
                                             }
                                             label="Disclaimer"
                                         />
+
+                                        {(() => {
+                                                const selectedProgramType = filters.program_types?.find(pt => pt.id === values.program_type);
+                                                const isMicroProgram = selectedProgramType?.name === "MicroMasters" || selectedProgramType?.name === "MicroBachelors";
+                                                return isMicroProgram && (
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Checkbox
+                                                                name="trademark"
+                                                                checked={values.trademark}
+                                                                onChange={e => setFieldValue("trademark", e.target.checked)}
+                                                                disabled={mode === 'view'}
+                                                            />
+                                                        }
+                                                        label="Trademark"
+                                                    />
+                                                );
+                                            })()}
+                                        </Box>
                                         {touched.disclaimer && Boolean(errors.disclaimer) && (
                                             <FormHelperText error>{errors.disclaimer}</FormHelperText>
+                                        )}
+                                         {touched.trademark && Boolean(errors.trademark) && (
+                                            <FormHelperText error>{errors.trademark}</FormHelperText>
                                         )}
                                     </Grid>
                                 }
@@ -2140,9 +2230,9 @@ const CourseForm = ({ mode = "add", page }) => {
                                             <TextField
                                                 fullWidth
                                                 type="number"
-                                                label="Interactive Cost"
-                                                value={countryCostForm.interactiveCost}
-                                                onChange={(e) => handleCountryCostFormChange("interactiveCost", e.target.value)}
+                                                label="Self Cost"
+                                                value={countryCostForm.selfCost}
+                                                onChange={(e) => handleCountryCostFormChange("selfCost", e.target.value)}
                                             />
                                         </Grid>
                                     </Grid>

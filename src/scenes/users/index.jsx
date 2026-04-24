@@ -17,7 +17,17 @@ import {
   MenuItem,
   Autocomplete,
 } from "@mui/material";
-import { Edit, Delete, Add, Visibility, VisibilityOff, CheckCircle, Error } from "@mui/icons-material";
+import {
+  Edit,
+  Delete,
+  Add,
+  Visibility,
+  VisibilityOff,
+  CheckCircle,
+  Error,
+  FileDownload,
+  Description,
+} from "@mui/icons-material";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { countries } from 'countries-list';
@@ -31,9 +41,10 @@ const Users = () => {
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sortCol, setSortCol] = useState("id");
+  const [sortCol, setSortCol] = useState("");
   const [sortDir, setSortDir] = useState("desc");
   console.log('users :>> ', users);
   const [loading, setLoading] = useState(true);
@@ -51,6 +62,11 @@ const Users = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [documentPreview, setDocumentPreview] = useState({
+    open: false,
+    url: "",
+    name: "",
+  });
 
   // Validation schema
   const UserSchema = Yup.object().shape({
@@ -83,15 +99,36 @@ const Users = () => {
       .required("Phone is required"),
   });
 
-  // Fetch users on component mount and when pagination changes
   useEffect(() => {
-    fetchUsers(page, rowsPerPage);
-  }, [page, rowsPerPage]);
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-  const fetchUsers = async (pageNum = 0, pageSize = 10) => {
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Fetch users on component mount and when pagination/search/sort changes
+  useEffect(() => {
+    fetchUsers(page, rowsPerPage, debouncedSearchTerm, sortCol, sortDir);
+  }, [page, rowsPerPage, debouncedSearchTerm, sortCol, sortDir]);
+
+  const fetchUsers = async (
+    pageNum = 0,
+    pageSize = 10,
+    search = "",
+    currentSortCol = "",
+    currentSortDir = "desc"
+  ) => {
     try {
       setLoading(true);
-      const response = await api.get(`/users?page=${pageNum + 1}&page_size=${pageSize}`);
+      const trimmedSearch = search.trim();
+      const searchQuery = trimmedSearch ? `&search=${encodeURIComponent(trimmedSearch)}` : "";
+      const sortQuery = currentSortCol
+        ? `&sort_by=${encodeURIComponent(currentSortCol)}&sort_dir=${encodeURIComponent(currentSortDir)}`
+        : "";
+      const response = await api.get(
+        `/users?page=${pageNum + 1}&page_size=${pageSize}${searchQuery}${sortQuery}`
+      );
       setUsers(response.data);
       setTotal(response.data.pagination?.totalItems || 0);
     } catch (error) {
@@ -153,6 +190,89 @@ const Users = () => {
     }
   };
 
+  const getUserDocumentPath = (user) =>
+    user?.government_id || user?.document || user?.documents || "";
+
+  const resolveDocumentUrl = (docPath) => {
+    if (!docPath) return "";
+
+    const normalizedPath = String(docPath).trim().replace(/\\/g, "/");
+    if (/^https?:\/\//i.test(normalizedPath)) return normalizedPath;
+
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || "";
+      const baseForJoin = apiBase.endsWith("/") ? apiBase : `${apiBase}/`;
+      return new URL(
+        normalizedPath.startsWith("/") ? normalizedPath.slice(1) : normalizedPath,
+        baseForJoin
+      ).toString();
+    } catch (error) {
+      return normalizedPath.startsWith("/") ? normalizedPath : `/${normalizedPath}`;
+    }
+  };
+
+  const getDocumentFileName = (docUrl) => {
+    if (!docUrl) return "document";
+    const cleanUrl = docUrl.split("?")[0];
+    return cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1) || "document";
+  };
+
+  const handleViewDocument = (user) => {
+    const docPath = getUserDocumentPath(user);
+    const docUrl = resolveDocumentUrl(docPath);
+    if (!docUrl) {
+      setSnackbar({
+        open: true,
+        message: "No document available for this learner",
+        severity: "warning",
+      });
+      return;
+    }
+    setDocumentPreview({
+      open: true,
+      url: docUrl,
+      name: getDocumentFileName(docUrl),
+    });
+  };
+
+  const handleDownloadDocument = async (user) => {
+    const docPath = getUserDocumentPath(user);
+    const docUrl = resolveDocumentUrl(docPath);
+    if (!docUrl) {
+      setSnackbar({
+        open: true,
+        message: "No document available for this learner",
+        severity: "warning",
+      });
+      return;
+    }
+
+    try {
+      const response = await api.get(docUrl, { responseType: "blob" });
+      const blob = new Blob([response.data]);
+      const objectUrl = window.URL.createObjectURL(blob);
+
+      const headerName = response.headers?.["content-disposition"];
+      const matchedName = headerName?.match(/filename\*?=(?:UTF-8'')?"?([^\";]+)"?/i)?.[1];
+      const filename = decodeURIComponent(matchedName || getDocumentFileName(docUrl));
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to download document",
+        severity: "error",
+      });
+    }
+  };
+
   const handleSubmit = async (values, { resetForm, setSubmitting }) => {
     try {
       // Find the country name from the selected country code
@@ -192,7 +312,7 @@ const Users = () => {
       resetForm();
       setOpenDialog(false);
       // Refresh users list
-      fetchUsers();
+      fetchUsers(page, rowsPerPage, debouncedSearchTerm, sortCol, sortDir);
     } catch (error) {
       console.error("Error saving user:", error);
       setSnackbar({
@@ -208,20 +328,6 @@ const Users = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <Box
-        m="20px"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   const getDisplayName = (user) => {
     const firstName = typeof user?.first_name === "string" ? user.first_name.trim() : "";
     const lastName = typeof user?.last_name === "string" ? user.last_name.trim() : "";
@@ -229,32 +335,11 @@ const Users = () => {
     return fullName || "-";
   };
 
-  // Apply frontend filtering by name or email
-  let filteredUsers = users?.data?.filter((u) => {
-    const fullName = getDisplayName(u).toLowerCase();
-    const email = u.email?.toLowerCase() || "";
-    const term = searchTerm.toLowerCase();
-    return fullName.includes(term) || email.includes(term);
-  })
-    .map((u) => ({
+  // Keep full names available for table display
+  let filteredUsers = users?.data?.map((u) => ({
       ...u,
       name: getDisplayName(u),
     }));
-
-  // Apply frontend sorting
-  if (sortCol && filteredUsers) {
-    filteredUsers.sort((a, b) => {
-      const aVal = a[sortCol];
-      const bVal = b[sortCol];
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-      } else {
-        const aStr = String(aVal || '').toLowerCase();
-        const bStr = String(bVal || '').toLowerCase();
-        return sortDir === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
-      }
-    });
-  }
 
   return (
     <Box>
@@ -274,7 +359,10 @@ const Users = () => {
           variant="outlined"
           placeholder="Search learners..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(0);
+          }}
           sx={{
             background: "#f5f7fa",
             borderRadius: 2,
@@ -302,11 +390,38 @@ const Users = () => {
 
       <CommonTable
         columns={[
-          { name: "id", label: "ID" },
+          // { name: "id", label: "ID" },
+           { 
+            name: "id", 
+            label: "ID",
+            render: (row, index) => page * rowsPerPage + index + 1
+          },
           { name: "name", label: "Name" },
           { name: "email", label: "Email" },
           { name: "country", label: "Country" },
           { name: "phone", label: "Phone" },
+          {
+            name: "documents",
+            label: "Documents",
+            sortable: false,
+            render: (row) => {
+              const hasDocument = Boolean(getUserDocumentPath(row));
+              return (
+                <Box display="flex" justifyContent="center" alignItems="center">
+                  <IconButton
+                    onClick={() => hasDocument && handleViewDocument(row)}
+                    title={hasDocument ? "View Document" : "No Document"}
+                    disabled={!hasDocument}
+                    sx={{
+                      color: hasDocument ? "#1976d2" : "#9e9e9e",
+                    }}
+                  >
+                    {hasDocument ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
+                  </IconButton>
+                </Box>
+              );
+            },
+          },
         ]}
         data={filteredUsers || []}
         total={total}
@@ -314,15 +429,22 @@ const Users = () => {
         rowsPerPage={rowsPerPage}
         loading={loading}
         onPageChange={setPage}
-        onRowsPerPageChange={(e) => setRowsPerPage(e?.target.value)}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(Number(e?.target.value) || 10);
+          setPage(0);
+        }}
         sortCol={sortCol}
         sortDir={sortDir}
         onSortChange={(col, dir) => {
-          setSortCol(col || "id");
+          setSortCol(col || "");
           setSortDir(dir);
+          setPage(0);
         }}
         actions={user => (
           <Box display="flex" gap={1}>
+            <IconButton onClick={() => handleDownloadDocument(user)} title="Download Document">
+              <FileDownload fontSize="small" className="icon" sx={{ color: '#2e7d32' }} />
+            </IconButton>
             <IconButton onClick={() => handleEditUser(user)} title="Edit">
               <Edit fontSize="small" className="icon" sx={{ color: '#ff9800' }} />
             </IconButton>
@@ -332,6 +454,35 @@ const Users = () => {
           </Box>
         )}
       />
+
+      <Dialog
+        open={documentPreview.open}
+        onClose={() => setDocumentPreview({ open: false, url: "", name: "" })}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>View Document</DialogTitle>
+        <DialogContent dividers sx={{ minHeight: 500 }}>
+          {documentPreview.url ? (
+            <Box sx={{ width: "100%", minHeight: 460 }}>
+              <iframe
+                src={documentPreview.url}
+                title={documentPreview.name || "Learner document"}
+                width="100%"
+                height="460"
+                style={{ border: "none" }}
+              />
+            </Box>
+          ) : (
+            <Typography>No document to preview.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDocumentPreview({ open: false, url: "", name: "" })}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={openDialog}

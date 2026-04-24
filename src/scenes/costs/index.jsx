@@ -26,6 +26,64 @@ import api from "../../helpers/api";
 import countries from "../../assets/countries.json";
 import CommonTable from "../../components/CommonTable";
 
+const roundMoney = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+
+/** Annual subscription / once-off total: interactive + self. */
+const annualSubscriptionTotalFromCosts = (interactive, self) => {
+    const i = Number(interactive);
+    const s = Number(self);
+    const ii = Number.isFinite(i) ? i : 0;
+    const ss = Number.isFinite(s) ? s : 0;
+    if (ii <= 0 && ss <= 0) return 0;
+    // return roundMoney(2 * ii + ss);
+    return roundMoney(ii + ss);
+};
+
+/**
+ * Same rule as learner checkout: if geo country matches a non-empty country row, preview uses that row
+ * in the visitor currency (from geo); otherwise the first row (default / all countries) in USD.
+ */
+const pickPreviewCostRow = (countryCosts, detectedCountryCode) => {
+    const list = Array.isArray(countryCosts) ? countryCosts : [];
+    const geo = String(detectedCountryCode || "US").toUpperCase();
+    const defaultRow = list[0] || {};
+    const matched = list.find(
+        (e) => e?.countryCode && String(e.countryCode).toUpperCase() === geo
+    );
+    if (!matched) {
+        return { row: defaultRow, useLearnerLocale: false };
+    }
+    return { row: matched, useLearnerLocale: true };
+};
+
+/** Matches learner checkout: local currency (whole amounts) when a country row matches IP; otherwise USD $x.xx on the default row. */
+const formatAdminPreviewMoney = (amount, useLearnerLocale, currencyCode) => {
+    const n = Number(amount);
+    if (!Number.isFinite(n) || n <= 0) return "—";
+    const cur = String(currencyCode || "USD").toUpperCase();
+    if (!useLearnerLocale || cur === "USD") {
+        return `$${roundMoney(n).toFixed(2)}`;
+    }
+    try {
+        return new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency: cur,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(Math.round(n));
+    } catch {
+        return `${cur} ${Math.round(n)}`;
+    }
+};
+
+/** Derive first-payment % from stored dollars and annual total (for edit mode). */
+const pctFromDollars = (total, dollars) => {
+    const t = Number(total);
+    const d = Number(dollars);
+    if (!Number.isFinite(t) || t <= 0 || !Number.isFinite(d)) return "";
+    return roundMoney((d / t) * 100);
+};
+
 const Costs = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
@@ -37,6 +95,25 @@ const Costs = () => {
     const [isCreateMode, setIsCreateMode] = useState(false);
     const [editingRow, setEditingRow] = useState(null);
     const [selectedProvider, setSelectedProvider] = useState(1);
+    const [geoCountryCode, setGeoCountryCode] = useState("US");
+    const [geoCurrencyCode, setGeoCurrencyCode] = useState("USD");
+
+    useEffect(() => {
+        const loadGeo = async () => {
+            try {
+                const geoResponse = await fetch("https://ipapi.co/json/");
+                if (!geoResponse.ok) return;
+                const geoData = await geoResponse.json();
+                const detected = String(geoData?.country_code || "US").toUpperCase();
+                setGeoCountryCode(detected);
+                const cur = String(geoData?.currency || "USD").toUpperCase();
+                if (cur) setGeoCurrencyCode(cur);
+            } catch (e) {
+                console.error("[Costs] Geo lookup failed", e);
+            }
+        };
+        loadGeo();
+    }, []);
 
     const fetchRows = async (providerId = selectedProvider) => {
         try {
@@ -82,11 +159,66 @@ const Costs = () => {
         setErrorMessage("");
 
         try {
-            const secondAndThird3060 = values.paymentSecondThird3060 === "" || values.paymentSecondThird3060 === null || values.paymentSecondThird3060 === undefined
-                ? ""
-                : Number(values.paymentSecondThird3060);
+            const pct2 = Number(values.pctFirst3060);
+            const pct3 = Number(values.pctFirstMonthly11);
+            const pct4 = Number(values.pctFirstQuarterly3);
 
-            const commonPayload = {
+            const maxPreviewAnnual = Math.max(
+                0,
+                ...(Array.isArray(values.countryCosts) ? values.countryCosts : []).map((e) =>
+                    annualSubscriptionTotalFromCosts(e?.interactiveCost, e?.selfCost)
+                )
+            );
+
+            if (values.paymentOptionThirtySixty && maxPreviewAnnual > 0) {
+                if (!Number.isFinite(pct2) || pct2 < 0 || pct2 > 100) {
+                    setErrorMessage("Case 2: First payment percentage must be between 0 and 100.");
+                    setSubmitting(false);
+                    return;
+                }
+            }
+            if (values.paymentOptionMonthly11 && maxPreviewAnnual > 0) {
+                if (!Number.isFinite(pct3) || pct3 < 0 || pct3 > 100) {
+                    setErrorMessage("Case 3: First payment percentage must be between 0 and 100.");
+                    setSubmitting(false);
+                    return;
+                }
+            }
+            if (values.paymentOptionQuarterly3 && maxPreviewAnnual > 0) {
+                if (!Number.isFinite(pct4) || pct4 < 0 || pct4 > 100) {
+                    setErrorMessage("Case 4: First payment percentage must be between 0 and 100.");
+                    setSubmitting(false);
+                    return;
+                }
+            }
+
+            const buildPaymentFieldsForAnnual = (annualTotal) => {
+                let paymentFirst3060 = "";
+                let paymentSecondThird3060 = "";
+                if (values.paymentOptionThirtySixty && annualTotal > 0 && Number.isFinite(pct2)) {
+                    paymentFirst3060 = roundMoney((annualTotal * pct2) / 100);
+                    const remainder = roundMoney(annualTotal - paymentFirst3060);
+                    paymentSecondThird3060 = roundMoney(remainder / 2);
+                }
+                let paymentFirstMonthly11 = "";
+                if (values.paymentOptionMonthly11 && annualTotal > 0 && Number.isFinite(pct3)) {
+                    paymentFirstMonthly11 = roundMoney((annualTotal * pct3) / 100);
+                }
+                let paymentFirstQuarterly3 = "";
+                if (values.paymentOptionQuarterly3 && annualTotal > 0 && Number.isFinite(pct4)) {
+                    paymentFirstQuarterly3 = roundMoney((annualTotal * pct4) / 100);
+                }
+                return {
+                    paymentOnceOffAmount: annualTotal > 0 ? annualTotal : "",
+                    paymentFirst3060,
+                    paymentSecond3060: paymentSecondThird3060,
+                    paymentThird3060: paymentSecondThird3060,
+                    paymentFirstMonthly11,
+                    paymentFirstQuarterly3,
+                };
+            };
+
+            const commonPayloadBase = {
                 providerId: values.providerId,
                 interactiveCaption: values.interactiveCaption,
                 selfCaption: values.selfCaption,
@@ -96,13 +228,6 @@ const Costs = () => {
                 paymentOptionThirtySixty: values.paymentOptionThirtySixty,
                 paymentOptionMonthly11: values.paymentOptionMonthly11,
                 paymentOptionQuarterly3: values.paymentOptionQuarterly3,
-                paymentOnceOffAmount: values.paymentOnceOffAmount,
-                paymentFirst3060: values.paymentFirst3060,
-                // Admin inputs a combined amount; we split equally for day 30 and day 60.
-                paymentSecond3060: secondAndThird3060,
-                paymentThird3060: secondAndThird3060,
-                paymentFirstMonthly11: values.paymentFirstMonthly11,
-                paymentFirstQuarterly3: values.paymentFirstQuarterly3,
             };
 
             const countryCosts = Array.isArray(values.countryCosts) && values.countryCosts.length
@@ -118,17 +243,21 @@ const Costs = () => {
                     const countryCode = entry.countryCode || "";
                     submittedCountries.add(countryCode);
                     const existing = existingByCountry.get(countryCode);
+                    const annualTotal = annualSubscriptionTotalFromCosts(entry.interactiveCost, entry.selfCost);
+                    const paymentFields = buildPaymentFieldsForAnnual(annualTotal);
 
                     if (existing?.id) {
                         await api.put(`/costs/${existing.id}`, {
-                            ...commonPayload,
+                            ...commonPayloadBase,
+                            ...paymentFields,
                             countryCode,
                             interactiveCost: entry.interactiveCost,
                             selfCost: entry.selfCost,
                         });
                     } else {
                         await api.post("/costs/update", {
-                            ...commonPayload,
+                            ...commonPayloadBase,
+                            ...paymentFields,
                             countryCode,
                             interactiveCost: entry.interactiveCost,
                             selfCost: entry.selfCost,
@@ -144,8 +273,11 @@ const Costs = () => {
                 }
             } else {
                 for (const entry of countryCosts) {
+                    const annualTotal = annualSubscriptionTotalFromCosts(entry.interactiveCost, entry.selfCost);
+                    const paymentFields = buildPaymentFieldsForAnnual(annualTotal);
                     await api.post("/costs/update", {
-                        ...commonPayload,
+                        ...commonPayloadBase,
+                        ...paymentFields,
                         countryCode: entry.countryCode,
                         interactiveCost: entry.interactiveCost,
                         selfCost: entry.selfCost,
@@ -172,6 +304,14 @@ const Costs = () => {
         rows.find((row) => row.course_id === null) ||
         null;
 
+    const annualForPctFromCommon = (() => {
+        const fromCosts = annualSubscriptionTotalFromCosts(
+            commonConfig?.interactive_cost,
+            commonConfig?.self_cost
+        );
+        return fromCosts > 0 ? fromCosts : Number(commonConfig?.payment_once_off_amount || 0);
+    })();
+
     const initialValues = {
         providerId: editingRow?.provider_id ?? selectedProvider,
         countryCosts: editingRow?.countryCosts?.length
@@ -196,11 +336,9 @@ const Costs = () => {
         paymentOptionThirtySixty: commonConfig?.payment_option_thirty_sixty ?? true,
         paymentOptionMonthly11: commonConfig?.payment_option_monthly_11 ?? true,
         paymentOptionQuarterly3: commonConfig?.payment_option_quarterly_3 ?? true,
-        paymentOnceOffAmount: commonConfig?.payment_once_off_amount ?? "",
-        paymentFirst3060: commonConfig?.payment_first_30_60 ?? "",
-        paymentSecondThird3060: commonConfig?.payment_second_30_60 ?? "",
-        paymentFirstMonthly11: commonConfig?.payment_first_monthly_11 ?? "",
-        paymentFirstQuarterly3: commonConfig?.payment_first_quarterly_3 ?? "",
+        pctFirst3060: pctFromDollars(annualForPctFromCommon, commonConfig?.payment_first_30_60),
+        pctFirstMonthly11: pctFromDollars(annualForPctFromCommon, commonConfig?.payment_first_monthly_11),
+        pctFirstQuarterly3: pctFromDollars(annualForPctFromCommon, commonConfig?.payment_first_quarterly_3),
     };
 
     const handleEdit = (row) => {
@@ -253,11 +391,9 @@ const Costs = () => {
         paymentOptionThirtySixty: Yup.boolean().required(),
         paymentOptionMonthly11: Yup.boolean().required(),
         paymentOptionQuarterly3: Yup.boolean().required(),
-        paymentOnceOffAmount: Yup.number().typeError("Must be a number").nullable(),
-        paymentFirst3060: Yup.number().typeError("Must be a number").nullable(),
-        paymentSecondThird3060: Yup.number().typeError("Must be a number").nullable(),
-        paymentFirstMonthly11: Yup.number().typeError("Must be a number").nullable(),
-        paymentFirstQuarterly3: Yup.number().typeError("Must be a number").nullable(),
+        pctFirst3060: Yup.number().typeError("Must be a number").min(0).max(100).nullable(),
+        pctFirstMonthly11: Yup.number().typeError("Must be a number").min(0).max(100).nullable(),
+        pctFirstQuarterly3: Yup.number().typeError("Must be a number").min(0).max(100).nullable(),
     });
 
     return (
@@ -349,7 +485,15 @@ const Costs = () => {
                             handleSubmit,
                             setFieldValue,
                             isSubmitting,
-                        }) => (
+                        }) => {
+                            const previewPick = pickPreviewCostRow(values.countryCosts, geoCountryCode);
+                            const previewAnnual = annualSubscriptionTotalFromCosts(
+                                previewPick.row?.interactiveCost,
+                                previewPick.row?.selfCost
+                            );
+                            const previewFmt = (amt) =>
+                                formatAdminPreviewMoney(amt, previewPick.useLearnerLocale, geoCurrencyCode);
+                            return (
                             <form onSubmit={handleSubmit}>
                                 <Typography variant="h6" mb="12px">1) Provider and Country Costs</Typography>
                                 <Box
@@ -452,8 +596,25 @@ const Costs = () => {
                                 <Divider sx={{ my: 3 }} />
                                 <Typography variant="h6" mb="12px">2) Subscription Payment Options</Typography>
                                 <Typography variant="body2" sx={{ color: colors.gray[100], mb: 2 }}>
-                                    All options are enabled by default for edX courses.
+                                    {/* Annual subscription total (same as once-off) is <strong>2 × Interactive cost + Self cost</strong> per country row. Installment percentages apply to that total; amounts are saved per country. The preview below follows the same rule as the learner site: if your IP country matches a configured country row, that row is used with the local currency from your IP; otherwise the default (first) row is shown in USD. All options are enabled by default for edX courses. */}
+                                    Annual subscription total (same as once-off) is <strong>Interactive cost + Self cost</strong> per country row. Installment percentages apply to that total; amounts are saved per country. The preview below follows the same rule as the learner site: if your IP country matches a configured country row, that row is used with the local currency from your IP; otherwise the default (first) row is shown in USD. All options are enabled by default for edX courses.
                                 </Typography>
+                                <Box mb={2} maxWidth={560}>
+                                    <Typography variant="body2">
+                                        Annual total (preview, your IP {geoCountryCode}
+                                        {previewPick.useLearnerLocale
+                                            ? `, row ${previewPick.row?.countryCode}`
+                                            : ", default row"}
+                                        ):{" "}
+                                        <strong>
+                                            {previewAnnual > 0 ? previewFmt(previewAnnual) : "—"}
+                                        </strong>
+                                    </Typography>
+                                    <Typography variant="caption" display="block" sx={{ color: colors.gray[100], mt: 0.5 }}>
+                                        {/* Formula: (2 × Interactive) + Self. Add interactive and self costs in section 1. */}
+                                        Formula: (Interactive) + Self. Add interactive and self costs in section 1.
+                                    </Typography>
+                                </Box>
                                 <FormGroup>
                                     <Box mb={2}>
                                         <FormControlLabel
@@ -463,7 +624,7 @@ const Costs = () => {
                                                     onChange={(e) => setFieldValue("paymentOptionOnceOff", e.target.checked)}
                                                 />
                                             }
-                                            label="Once-off payment of $1190"
+                                            label={`Once-off payment of ${previewAnnual > 0 ? previewFmt(previewAnnual) : "—"}`}
                                         />
                                     </Box>
 
@@ -475,7 +636,7 @@ const Costs = () => {
                                                     onChange={(e) => setFieldValue("paymentOptionThirtySixty", e.target.checked)}
                                                 />
                                             }
-                                            label="First payment (custom amount), then 2 additional payments over 30 and 60 days"
+                                            label="First payment (% of annual total), then 2 equal payments at 30 and 60 days"
                                         />
                                         {Boolean(values.paymentOptionThirtySixty) && (
                                             <Box pl={4} pt={1} display="grid" gap="12px" gridTemplateColumns="repeat(2, minmax(0, 1fr))">
@@ -483,22 +644,31 @@ const Costs = () => {
                                                     fullWidth
                                                     variant="filled"
                                                     type="number"
-                                                    label="First payment"
-                                                    name="paymentFirst3060"
-                                                    value={values.paymentFirst3060}
+                                                    label="First payment (%)"
+                                                    name="pctFirst3060"
+                                                    value={values.pctFirst3060}
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
+                                                    inputProps={{ min: 0, max: 100, step: "0.01" }}
                                                 />
-                                                <TextField
+                                                {/* <TextField
                                                     fullWidth
                                                     variant="filled"
-                                                    type="number"
-                                                    label="Second and Third payment amount"
-                                                    name="paymentSecondThird3060"
-                                                    value={values.paymentSecondThird3060}
-                                                    onBlur={handleBlur}
-                                                    onChange={handleChange}
-                                                />
+                                                    type="text"
+                                                    label="2nd & 3rd payment (each, calculated)"
+                                                    value={(() => {
+                                                        const t = previewAnnual;
+                                                        const p = Number(values.pctFirst3060);
+                                                        if (!Number.isFinite(t) || t <= 0 || !Number.isFinite(p)) return "—";
+                                                        const first = roundMoney((t * p) / 100);
+                                                        const each = roundMoney((t - first) / 2);
+                                                        return previewFmt(each);
+                                                    })()}
+                                                    InputProps={{ readOnly: true }}
+                                                /> */}
+                                                <Typography variant="caption" sx={{ gridColumn: "span 2", color: colors.gray[100] }}>
+                                                    Example: 20% first → 40% of total for day 30 and 40% for day 60. Example: 33.33% first → ~33.33% each for three equal payments.
+                                                </Typography>
                                             </Box>
                                         )}
                                     </Box>
@@ -511,20 +681,32 @@ const Costs = () => {
                                                     onChange={(e) => setFieldValue("paymentOptionMonthly11", e.target.checked)}
                                                 />
                                             }
-                                            label="First payment (custom amount), then monthly payments for 11 months"
+                                            label="First payment (% of annual total), then 11 equal monthly payments"
                                         />
                                         {Boolean(values.paymentOptionMonthly11) && (
-                                            <Box pl={4} pt={1}>
+                                            <Box pl={4} pt={1} display="grid" gap="12px" maxWidth={480}>
                                                 <TextField
                                                     fullWidth
                                                     variant="filled"
                                                     type="number"
-                                                    label="Option 3 - First payment (monthly auto-adjust)"
-                                                    name="paymentFirstMonthly11"
-                                                    value={values.paymentFirstMonthly11}
+                                                    label="First payment (%)"
+                                                    name="pctFirstMonthly11"
+                                                    value={values.pctFirstMonthly11}
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
+                                                    inputProps={{ min: 0, max: 100, step: "0.01" }}
                                                 />
+                                                <Typography variant="caption" sx={{ color: colors.gray[100] }}>
+                                                    Each monthly payment (calculated on checkout):{" "}
+                                                    {(() => {
+                                                        const t = previewAnnual;
+                                                        const p = Number(values.pctFirstMonthly11);
+                                                        if (!Number.isFinite(t) || t <= 0 || !Number.isFinite(p)) return "—";
+                                                        const first = roundMoney((t * p) / 100);
+                                                        const monthly = roundMoney((t - first) / 11);
+                                                        return previewFmt(monthly);
+                                                    })()}
+                                                </Typography>
                                             </Box>
                                         )}
                                     </Box>
@@ -537,20 +719,32 @@ const Costs = () => {
                                                     onChange={(e) => setFieldValue("paymentOptionQuarterly3", e.target.checked)}
                                                 />
                                             }
-                                            label="First payment (custom amount), then 3 quarterly payments"
+                                            label="First payment (% of annual total), then 3 equal quarterly payments"
                                         />
                                         {Boolean(values.paymentOptionQuarterly3) && (
-                                            <Box pl={4} pt={1}>
+                                            <Box pl={4} pt={1} display="grid" gap="12px" maxWidth={480}>
                                                 <TextField
                                                     fullWidth
                                                     variant="filled"
                                                     type="number"
-                                                    label="Option 4 - First payment (quarterly auto-adjust)"
-                                                    name="paymentFirstQuarterly3"
-                                                    value={values.paymentFirstQuarterly3}
+                                                    label="First payment (%)"
+                                                    name="pctFirstQuarterly3"
+                                                    value={values.pctFirstQuarterly3}
                                                     onBlur={handleBlur}
                                                     onChange={handleChange}
+                                                    inputProps={{ min: 0, max: 100, step: "0.01" }}
                                                 />
+                                                <Typography variant="caption" sx={{ color: colors.gray[100] }}>
+                                                    Each quarterly payment (calculated on checkout):{" "}
+                                                    {(() => {
+                                                        const t = previewAnnual;
+                                                        const p = Number(values.pctFirstQuarterly3);
+                                                        if (!Number.isFinite(t) || t <= 0 || !Number.isFinite(p)) return "—";
+                                                        const first = roundMoney((t * p) / 100);
+                                                        const q = roundMoney((t - first) / 3);
+                                                        return previewFmt(q);
+                                                    })()}
+                                                </Typography>
                                             </Box>
                                         )}
                                     </Box>
@@ -630,7 +824,8 @@ const Costs = () => {
                                     </Button>
                                 </Box>
                             </form>
-                        )}
+                            );
+                        }}
                     </Formik>
                 </Box>
             )}
