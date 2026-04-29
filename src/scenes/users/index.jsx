@@ -393,8 +393,7 @@ const Users = () => {
           // { name: "id", label: "ID" },
            { 
             name: "id", 
-            label: "ID",
-            render: (row, index) => page * rowsPerPage + index + 1
+            label: "ID"
           },
           { name: "name", label: "Name" },
           { name: "email", label: "Email" },
