@@ -151,7 +151,7 @@ const SortableExploreItem = ({ id, course, position, category, onEdit }) => {
           bgcolor: 'white',
           borderRadius: 2,
           p: 2,
-          height: 100,
+          height: 'auto',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -176,7 +176,7 @@ const SortableExploreItem = ({ id, course, position, category, onEdit }) => {
         >
           Edit
         </Button>
-        <Typography variant="subtitle1" sx={{ textAlign: 'center', color: courseId ? 'primary.main' : 'text.disabled' }}>
+        <Typography variant="subtitle1" sx={{ textAlign: 'center', color: courseId ? 'primary.main' : 'text.disabled', paddingTop:'20px' }}>
           {courseTitle}
         </Typography>
       </Box>
