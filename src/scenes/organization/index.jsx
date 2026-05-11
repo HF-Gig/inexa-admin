@@ -63,7 +63,7 @@ const Organization = () => {
             setOrganizations(sortedOrgs);
         } else {
             const filtered = sortedOrgs.filter(org =>
-                org.organization_name?.toLowerCase().includes(search.toLowerCase())
+                org.name?.toLowerCase().includes(search.toLowerCase())
             );
             setOrganizations(filtered);
         }
@@ -90,7 +90,7 @@ const Organization = () => {
             let hasMore = true;
 
             while (hasMore) {
-                const res = await api.get(`/organization?page=${pageNum}&page_size=100&search=${searchQuery}`);
+                const res = await api.get(`/owners?page=${pageNum}&page_size=100&name=${searchQuery}`);
                 if (res.status !== 200) throw new Error("Failed to fetch owners");
 
                 const dataChunk = res.data.data || [];
@@ -118,7 +118,7 @@ const Organization = () => {
 
     const handleDeleteOwner = async (orgId) => {
         try {
-            await api.delete(`/organization/${orgId}`).then((res) => {
+            await api.delete(`/owners/${orgId}`).then((res) => {
                 if (res.status === 200) {
                     setSnackbar({ open: true, message: "Owner deleted successfully!", severity: "success" });
                     fetchOwners();
@@ -145,25 +145,24 @@ const Organization = () => {
     const tableColumns = [
         // { name: "id", label: "ID", width: 80 },
             { 
-            name: "serial", 
+            name: "id", 
             label: "ID", 
             width: 80,
-            sortable: false,
-            render: (row, index) => (page * rowsPerPage) + index + 1
+            sortable: false
         },
         {
-            name: "organization_logo_image_url",
+            name: "certificate_logo_image_url",
             label: "Logo",
             width: 80,
             render: (row) =>
-                row.organization_logo_image_url ? (
+                row.certificate_logo_image_url ? (
                     <Avatar
-                        src={row.organization_logo_image_url}
+                        src={row.certificate_logo_image_url}
                         alt={row.organization_name}
                         sx={{ cursor: "pointer" }}
                         onClick={() => {
                             console.log("Using image path:", row);
-                            setLogoDialogUrl(row.organization_logo_image_url);
+                            setLogoDialogUrl(row.certificate_logo_image_url);
                             setLogoDialogOpen(true);
                         }}
                     />
@@ -171,7 +170,7 @@ const Organization = () => {
                     <Avatar>{row.organization_name?.[0]}</Avatar>
                 ),
         },
-        { name: "organization_name", label: "Name", width: 180 },
+        { name: "name", label: "Name", width: 180 },
     ];
 
     return (

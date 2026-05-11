@@ -11,6 +11,31 @@ const api = axios.create({
   },
 });
 
+let isRedirectingToSignin = false;
+
+const isSigninRequest = (config = {}) => {
+  return config.url?.includes('/auth/admin/signin');
+};
+
+const clearAuthAndRedirect = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('name');
+
+  if (
+    typeof window !== 'undefined' &&
+    window.location.pathname !== '/signin' &&
+    !isRedirectingToSignin
+  ) {
+    isRedirectingToSignin = true;
+    window.location.replace('/signin');
+  }
+};
+
+const isUnauthorizedPayload = (data) => {
+  const message = typeof data?.message === 'string' ? data.message.toLowerCase() : '';
+  return data?.statusCode === 401 || message.includes('expired token');
+};
+
 // Request interceptor to add auth token if available and set Content-Type for FormData
 api.interceptors.request.use(
   (config) => {
@@ -33,12 +58,19 @@ api.interceptors.request.use(
 // Response interceptor to handle common errors
 api.interceptors.response.use(
   (response) => {
+    if (!isSigninRequest(response.config) && isUnauthorizedPayload(response.data)) {
+      clearAuthAndRedirect();
+
+      const authError = new Error(response.data?.message || 'Unauthorized');
+      authError.response = response;
+      return Promise.reject(authError);
+    }
+
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('token');
+    if (!isSigninRequest(error.config) && error.response?.status === 401) {
+      clearAuthAndRedirect();
     }
     return Promise.reject(error);
   }

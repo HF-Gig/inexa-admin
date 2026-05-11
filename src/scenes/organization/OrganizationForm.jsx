@@ -12,8 +12,8 @@ const OrganizationForm = ({ mode = "add" }) => {
     const navigate = useNavigate();
     const { showToast } = useToast();
     const [initial, setInitial] = useState({
-        organization_name: "",
-        organization_logo_image_url: null,
+        name: "",
+        certificate_logo_image_url: null,
     });
     const [loading, setLoading] = useState(mode !== "add");
     const [imagePreview, setImagePreview] = useState(null);
@@ -22,13 +22,13 @@ const OrganizationForm = ({ mode = "add" }) => {
     useEffect(() => {
         if ((mode === "edit" || mode === "view") && id) {
             setLoading(true);
-            api.get(`/organization/${id}`).then(res => {
+            api.get(`/owners/${id}`).then(res => {
                 const data = res.data.data || {};
                 setInitial({
-                    organization_name: data.organization_name || "",
-                    organization_logo_image_url: data.organization_logo_image_url || null,
+                    name: data.name || "",
+                    certificate_logo_image_url: data.certificate_logo_image_url || null,
                 });
-                setImagePreview(data.organization_logo_image_url || null);
+                setImagePreview(data.certificate_logo_image_url || null);
                 setLoading(false);
             });
         }
@@ -37,7 +37,7 @@ const OrganizationForm = ({ mode = "add" }) => {
     if (loading) return <CircularProgress />;
 
     const OrganizationSchema = Yup.object().shape({
-        organization_name: Yup.string().trim().min(2, "Organization name must be at least 2 characters")
+        name: Yup.string().trim().min(2, "Organization name must be at least 2 characters")
             .max(50, "Organization name must be at most 50 characters").required("Organization name is required"),
     });
     return (
@@ -59,13 +59,13 @@ const OrganizationForm = ({ mode = "add" }) => {
                 validationSchema={OrganizationSchema}
                 onSubmit={async (values, { setSubmitting }) => {
                     const formData = new FormData();
-                    formData.append('organization_name', values.organization_name);
-                    if (values.organization_logo_image_url && values.organization_logo_image_url instanceof File) {
-                        formData.append('organization_logo_image_url', values.organization_logo_image_url);
+                    formData.append('name', values.name);
+                    if (values.certificate_logo_image_url && values.certificate_logo_image_url instanceof File) {
+                        formData.append('certificate_logo_image_url', values.certificate_logo_image_url);
                     }
                     try {
                         const isAdd = mode === "add";
-                        const url = isAdd ? "/organization" : `/organization/${id}`;
+                        const url = isAdd ? "/owners" : `/owners/${id}`;
                         const method = isAdd ? "post" : "post";
 
                         const res = await api[method](url, formData);
@@ -101,16 +101,16 @@ const OrganizationForm = ({ mode = "add" }) => {
                         <Grid container spacing={2}>
                             <Grid item xs={12} md={6}>
                                 <CommonTextField
-                                    name="organization_name"
+                                    name="name"
                                     label="University Name"
                                     required
-                                    onChange={e => setFieldValue("organization_name", e.target.value)}
-                                    value={values.organization_name}
+                                    onChange={e => setFieldValue("name", e.target.value)}
+                                    value={values.name}
                                     disabled={mode === 'view'}
                                     helperText={
-                                        touched.organization_name && errors.organization_name ? (
+                                        touched.name && errors.name ? (
                                             <span style={{ color: "#d32f2f", fontSize: 13, marginTop: 2 }}>
-                                                {errors.organization_name}
+                                                {errors.name}
                                             </span>
                                         ) : null
                                     }
@@ -149,7 +149,7 @@ const OrganizationForm = ({ mode = "add" }) => {
                                             if (mode === 'view') return;
                                             const file = e.dataTransfer.files[0];
                                             if (file && file.type.startsWith('image/')) {
-                                                setFieldValue("organization_logo_image_url", file);
+                                                setFieldValue("certificate_logo_image_url", file);
                                                 const reader = new FileReader();
                                                 reader.onload = ev => setImagePreview(ev.target.result);
                                                 reader.readAsDataURL(file);
@@ -165,7 +165,7 @@ const OrganizationForm = ({ mode = "add" }) => {
                                             onChange={e => {
                                                 const file = e.currentTarget.files[0];
                                                 if (file) {
-                                                    setFieldValue("organization_logo_image_url", file);
+                                                    setFieldValue("certificate_logo_image_url", file);
                                                     const reader = new FileReader();
                                                     reader.onload = ev => setImagePreview(ev.target.result);
                                                     reader.readAsDataURL(file);
@@ -193,7 +193,7 @@ const OrganizationForm = ({ mode = "add" }) => {
                                                         sx={{ position: 'absolute', top: 8, right: 8, minWidth: 0, width: 28, height: 28, borderRadius: '50%', p: 0, fontWeight: 'bold', fontSize: 18, lineHeight: 1 }}
                                                         onClick={e => {
                                                             e.stopPropagation();
-                                                            setFieldValue("organization_logo_image_url", null);
+                                                            setFieldValue("certificate_logo_image_url", null);
                                                             setImagePreview(null);
                                                         }}
                                                     >
@@ -202,8 +202,8 @@ const OrganizationForm = ({ mode = "add" }) => {
                                                 )}
                                             </Box>
                                         )}
-                                        <FormHelperText error={!!(touched.organization_logo_image_url && errors.organization_logo_image_url)}>
-                                            {touched.organization_logo_image_url && errors.organization_logo_image_url}
+                                        <FormHelperText error={!!(touched.certificate_logo_image_url && errors.certificate_logo_image_url)}>
+                                            {touched.certificate_logo_image_url && errors.certificate_logo_image_url}
                                         </FormHelperText>
                                     </Box>
                                 )}
